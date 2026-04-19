@@ -1,6 +1,8 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -64,6 +66,35 @@ static VkResult createInstance() {
 		requiredExtensions[i] = glfwExtensions[i];
 	}
 	#endif
+
+	// Checking for extension support
+	{
+		uint32_t supportedExtensionsNum = 0;
+		vkEnumerateInstanceExtensionProperties(nullptr, &supportedExtensionsNum, nullptr);
+		VkExtensionProperties supportedExtensions[supportedExtensionsNum];
+		vkEnumerateInstanceExtensionProperties(nullptr, &supportedExtensionsNum, supportedExtensions);
+		printf("The following extensions are supported:\n");
+
+		for (uint32_t j = 0; j < supportedExtensionsNum; j++) {
+			printf("%s, ", supportedExtensions[j].extensionName);
+		}
+		printf("\n");
+
+		// Checking if required extensions are supported
+		for (uint32_t i = 0; i < extensionCount; i++) {
+			bool found = false;
+			for (uint32_t j = 0; j < supportedExtensionsNum; j++) {
+				if (strcmp(requiredExtensions[i], supportedExtensions[j].extensionName) == 0) {
+					found = true;
+				}
+			}
+			if (!found) {
+				fprintf(stderr, "Required extension %s is not supported\n", requiredExtensions[i]);
+				result = VK_ERROR_EXTENSION_NOT_PRESENT;
+				goto failure;
+			}
+		}
+	}
 
 	createInfo.enabledExtensionCount = extensionCount;
 	createInfo.ppEnabledExtensionNames = requiredExtensions;
