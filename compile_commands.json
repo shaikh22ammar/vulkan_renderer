@@ -11,6 +11,8 @@
       "-I/usr/local/lib/pkgconfig/../../include",
       "-I/opt/homebrew/Cellar/glfw/3.4/include",
       "-DMAC_OS",
+      "-g",
+      "-O0",
       "src/main.c",
       "-o",
       "bin/renderer"

@@ -13,13 +13,15 @@ LDFLAGS += -lm
 LDFLAGS += -Wl,-rpath,$(shell pkg-config --variable=libdir glfw3)
 LDFLAGS += -Wl,-rpath,$(shell pkg-config --variable=libdir vulkan)
 
-
 SRCS = src/main.c
 
 TARGET = bin/renderer
 
-build:
-	make $(TARGET)
+debug: CFLAGS += -g -O0
+debug: $(TARGET)
+
+build: CFLAGS += -O2
+build: $(TARGET)
 
 bin/renderer: $(SRCS) | bin
 	$(CC) $(CFLAGS) src/*.c -o bin/renderer $(LDFLAGS)
@@ -36,6 +38,3 @@ bin:
 clean:
 	rm -rfv *.o bin/*
 
-clean_build:
-	make clean
-	make build

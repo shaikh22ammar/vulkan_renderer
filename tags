@@ -8,6 +8,7 @@
 !_TAG_FIELD_DESCRIPTION	name	/tag name/
 !_TAG_FIELD_DESCRIPTION	pattern	/pattern/
 !_TAG_FIELD_DESCRIPTION	typeref	/Type and name of a variable or typedef/
+!_TAG_FIELD_DESCRIPTION!XML	uri	/uri associated with name prefix/
 !_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
 !_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
 !_TAG_KIND_DESCRIPTION!C	d,macro	/macro definitions/
@@ -29,6 +30,11 @@
 !_TAG_KIND_DESCRIPTION!Make	I,makefile	/makefiles/
 !_TAG_KIND_DESCRIPTION!Make	m,macro	/macros/
 !_TAG_KIND_DESCRIPTION!Make	t,target	/targets/
+!_TAG_KIND_DESCRIPTION!PlistXML	k,key	/keys/
+!_TAG_KIND_DESCRIPTION!XML	i,id	/id attributes/
+!_TAG_KIND_DESCRIPTION!XML	n,nsprefix	/namespace prefixes/
+!_TAG_KIND_DESCRIPTION!XML	r,root	/root elements/
+!_TAG_KIND_DESCRIPTION!Yaml	a,anchor	/anchors/
 !_TAG_OUTPUT_EXCMD	mixed	/number, pattern, mixed, or combineV2/
 !_TAG_OUTPUT_FILESEP	slash	/slash or backslash/
 !_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
@@ -36,6 +42,9 @@
 !_TAG_PARSER_VERSION!C	1.1	/current.age/
 !_TAG_PARSER_VERSION!JSON	0.0	/current.age/
 !_TAG_PARSER_VERSION!Make	1.1	/current.age/
+!_TAG_PARSER_VERSION!PlistXML	0.0	/current.age/
+!_TAG_PARSER_VERSION!XML	0.0	/current.age/
+!_TAG_PARSER_VERSION!Yaml	0.0	/current.age/
 !_TAG_PATTERN_LENGTH_LIMIT	96	/0 for no limit/
 !_TAG_PROC_CWD	/Users/shaikhammar/Documents/Programming/graphics/vulkan_renderer/	//
 !_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
@@ -49,11 +58,14 @@
 !_TAG_ROLE_DESCRIPTION!C!struct	foreigndecl	/declared in foreign languages/
 !_TAG_ROLE_DESCRIPTION!Make!makefile	included	/included/
 !_TAG_ROLE_DESCRIPTION!Make!makefile	optional	/optionally included/
+!_TAG_ROLE_DESCRIPTION!Yaml!anchor	alias	/alias/
 0	compile_commands.json	/^      "cc",$/;"	s	array:0.arguments
 0	compile_commands.json	/^  {$/;"	o
 1	compile_commands.json	/^      "-Wall",$/;"	s	array:0.arguments
-10	compile_commands.json	/^      "-o",$/;"	s	array:0.arguments
-11	compile_commands.json	/^      "bin\/renderer"$/;"	s	array:0.arguments
+10	compile_commands.json	/^      "-O0",$/;"	s	array:0.arguments
+11	compile_commands.json	/^      "src\/main.c",$/;"	s	array:0.arguments
+12	compile_commands.json	/^      "-o",$/;"	s	array:0.arguments
+13	compile_commands.json	/^      "bin\/renderer"$/;"	s	array:0.arguments
 2	compile_commands.json	/^      "-Wextra",$/;"	s	array:0.arguments
 3	compile_commands.json	/^      "-std=c23",$/;"	s	array:0.arguments
 4	compile_commands.json	/^      "-Wdouble-promotion",$/;"	s	array:0.arguments
@@ -61,8 +73,15 @@
 6	compile_commands.json	/^      "-I\/usr\/local\/lib\/pkgconfig\/..\/..\/include",$/;"	s	array:0.arguments
 7	compile_commands.json	/^      "-I\/opt\/homebrew\/Cellar\/glfw\/3.4\/include",$/;"	s	array:0.arguments
 8	compile_commands.json	/^      "-DMAC_OS",$/;"	s	array:0.arguments
-9	compile_commands.json	/^      "src\/main.c",$/;"	s	array:0.arguments
+9	compile_commands.json	/^      "-g",$/;"	s	array:0.arguments
 CC	makefile	/^CC = cc$/;"	m
+CFBundleDevelopmentRegion	bin/renderer.dSYM/Contents/Info.plist	/^		<key>CFBundleDevelopmentRegion<\/key>$/;"	k
+CFBundleIdentifier	bin/renderer.dSYM/Contents/Info.plist	/^		<key>CFBundleIdentifier<\/key>$/;"	k
+CFBundleInfoDictionaryVersion	bin/renderer.dSYM/Contents/Info.plist	/^		<key>CFBundleInfoDictionaryVersion<\/key>$/;"	k
+CFBundlePackageType	bin/renderer.dSYM/Contents/Info.plist	/^		<key>CFBundlePackageType<\/key>$/;"	k
+CFBundleShortVersionString	bin/renderer.dSYM/Contents/Info.plist	/^		<key>CFBundleShortVersionString<\/key>$/;"	k
+CFBundleSignature	bin/renderer.dSYM/Contents/Info.plist	/^		<key>CFBundleSignature<\/key>$/;"	k
+CFBundleVersion	bin/renderer.dSYM/Contents/Info.plist	/^		<key>CFBundleVersion<\/key>$/;"	k
 CFLAGS	makefile	/^CFLAGS = -Wall -Wextra -std=c23$/;"	m
 GLFW_INCLUDE_VULKAN	src/main.c	/^#define GLFW_INCLUDE_VULKAN$/;"	d	file:
 GLFW_INCLUDE_VULKAN	test/test.c	/^#define GLFW_INCLUDE_VULKAN$/;"	d	file:
@@ -76,13 +95,19 @@ WIDTH	src/main.c	/^constexpr uint32_t WIDTH = 800;$/;"	v	typeref:typename:conste
 arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:0
 bin	makefile	/^bin:$/;"	t
 bin/renderer	makefile	/^bin\/renderer: $(SRCS) | bin$/;"	t
-build	makefile	/^build:$/;"	t
+build	makefile	/^build: $(TARGET)$/;"	t
+build	makefile	/^build: CFLAGS += -O2$/;"	t
+checkExtensionSupport	src/main.c	/^static bool checkExtensionSupport() {$/;"	f	typeref:typename:bool	file:
+checkValidationLayerSupport	src/main.c	/^static bool checkValidationLayerSupport() {$/;"	f	typeref:typename:bool	file:
 clean	makefile	/^clean:$/;"	t
 cleanUp	src/main.c	/^static void cleanUp() {$/;"	f	typeref:typename:void	file:
-clean_build	makefile	/^clean_build:$/;"	t
 compile_commands.json	makefile	/^compile_commands.json: $(SRCS)$/;"	t
 createInstance	src/main.c	/^static VkResult createInstance() {$/;"	f	typeref:typename:VkResult	file:
+debug	makefile	/^debug: $(TARGET)$/;"	t
+debug	makefile	/^debug: CFLAGS += -g -O0$/;"	t
 directory	compile_commands.json	/^    "directory": "\/Users\/shaikhammar\/Documents\/Programming\/graphics\/vulkan_renderer",$/;"	s	object:0
+enableValidationLayers	src/main.c	/^constexpr bool enableValidationLayers = false;$/;"	v	typeref:typename:constexpr bool
+enableValidationLayers	src/main.c	/^constexpr bool enableValidationLayers = true;$/;"	v	typeref:typename:constexpr bool
 file	compile_commands.json	/^    "file": "src\/main.c",$/;"	s	object:0
 initVulkan	src/main.c	/^static void initVulkan() {$/;"	f	typeref:typename:void	file:
 initWindow	src/main.c	/^static void initWindow() {$/;"	f	typeref:typename:void	file:
@@ -91,6 +116,10 @@ main	src/main.c	/^int main() {$/;"	f	typeref:typename:int
 main	test/test.c	/^int main() {$/;"	f	typeref:typename:int
 mainLoop	src/main.c	/^static void mainLoop() {$/;"	f	typeref:typename:void	file:
 output	compile_commands.json	/^    "output": "bin\/renderer"$/;"	s	object:0
+requiredExtensions	src/main.c	/^const char **requiredExtensions = nullptr;$/;"	v	typeref:typename:const char **
+requiredExtensionsCount	src/main.c	/^uint32_t requiredExtensionsCount = 0;$/;"	v	typeref:typename:uint32_t
 run	makefile	/^run: $/;"	t
 run	src/main.c	/^void run() {$/;"	f	typeref:typename:void
+validationLayers	src/main.c	/^const char *validationLayers[validationLayersCount] = {"VK_LAYER_KHRONOS_validation"};$/;"	v	typeref:typename:const char * []
+validationLayersCount	src/main.c	/^constexpr uint32_t validationLayersCount = 1;$/;"	v	typeref:typename:constexpr uint32_t
 window	src/main.c	/^static GLFWwindow *window;$/;"	v	typeref:typename:GLFWwindow *	file:
