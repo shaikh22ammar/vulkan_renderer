@@ -1,0 +1,21 @@
+[
+  {
+    "file": "src/main.c",
+    "arguments": [
+      "cc",
+      "-Wall",
+      "-Wextra",
+      "-std=c23",
+      "-Wdouble-promotion",
+      "-Wfloat-conversion",
+      "-I/usr/local/lib/pkgconfig/../../include",
+      "-I/opt/homebrew/Cellar/glfw/3.4/include",
+      "-DMAC_OS",
+      "src/main.c",
+      "-o",
+      "bin/renderer"
+    ],
+    "directory": "/Users/shaikhammar/Documents/Programming/graphics/vulkan_renderer",
+    "output": "bin/renderer"
+  }
+]

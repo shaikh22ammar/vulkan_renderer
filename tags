@@ -20,6 +20,12 @@
 !_TAG_KIND_DESCRIPTION!C	t,typedef	/typedefs/
 !_TAG_KIND_DESCRIPTION!C	u,union	/union names/
 !_TAG_KIND_DESCRIPTION!C	v,variable	/variable definitions/
+!_TAG_KIND_DESCRIPTION!JSON	a,array	/arrays/
+!_TAG_KIND_DESCRIPTION!JSON	b,boolean	/booleans/
+!_TAG_KIND_DESCRIPTION!JSON	n,number	/numbers/
+!_TAG_KIND_DESCRIPTION!JSON	o,object	/objects/
+!_TAG_KIND_DESCRIPTION!JSON	s,string	/strings/
+!_TAG_KIND_DESCRIPTION!JSON	z,null	/nulls/
 !_TAG_KIND_DESCRIPTION!Make	I,makefile	/makefiles/
 !_TAG_KIND_DESCRIPTION!Make	m,macro	/macros/
 !_TAG_KIND_DESCRIPTION!Make	t,target	/targets/
@@ -28,6 +34,7 @@
 !_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
 !_TAG_OUTPUT_VERSION	1.1	/current.age/
 !_TAG_PARSER_VERSION!C	1.1	/current.age/
+!_TAG_PARSER_VERSION!JSON	0.0	/current.age/
 !_TAG_PARSER_VERSION!Make	1.1	/current.age/
 !_TAG_PATTERN_LENGTH_LIMIT	96	/0 for no limit/
 !_TAG_PROC_CWD	/Users/shaikhammar/Documents/Programming/graphics/vulkan_renderer/	//
@@ -42,14 +49,48 @@
 !_TAG_ROLE_DESCRIPTION!C!struct	foreigndecl	/declared in foreign languages/
 !_TAG_ROLE_DESCRIPTION!Make!makefile	included	/included/
 !_TAG_ROLE_DESCRIPTION!Make!makefile	optional	/optionally included/
+0	compile_commands.json	/^      "cc",$/;"	s	array:0.arguments
+0	compile_commands.json	/^  {$/;"	o
+1	compile_commands.json	/^      "-Wall",$/;"	s	array:0.arguments
+10	compile_commands.json	/^      "-o",$/;"	s	array:0.arguments
+11	compile_commands.json	/^      "bin\/renderer"$/;"	s	array:0.arguments
+2	compile_commands.json	/^      "-Wextra",$/;"	s	array:0.arguments
+3	compile_commands.json	/^      "-std=c23",$/;"	s	array:0.arguments
+4	compile_commands.json	/^      "-Wdouble-promotion",$/;"	s	array:0.arguments
+5	compile_commands.json	/^      "-Wfloat-conversion",$/;"	s	array:0.arguments
+6	compile_commands.json	/^      "-I\/usr\/local\/lib\/pkgconfig\/..\/..\/include",$/;"	s	array:0.arguments
+7	compile_commands.json	/^      "-I\/opt\/homebrew\/Cellar\/glfw\/3.4\/include",$/;"	s	array:0.arguments
+8	compile_commands.json	/^      "-DMAC_OS",$/;"	s	array:0.arguments
+9	compile_commands.json	/^      "src\/main.c",$/;"	s	array:0.arguments
 CC	makefile	/^CC = cc$/;"	m
 CFLAGS	makefile	/^CFLAGS = -Wall -Wextra -std=c23$/;"	m
 GLFW_INCLUDE_VULKAN	src/main.c	/^#define GLFW_INCLUDE_VULKAN$/;"	d	file:
-GLM_FORCE_DEPTH_ZERO_TO_ONE	src/main.c	/^#define GLM_FORCE_DEPTH_ZERO_TO_ONE$/;"	d	file:
-GLM_FORCE_RADIANS	src/main.c	/^#define GLM_FORCE_RADIANS$/;"	d	file:
+GLFW_INCLUDE_VULKAN	test/test.c	/^#define GLFW_INCLUDE_VULKAN$/;"	d	file:
+GLM_FORCE_DEPTH_ZERO_TO_ONE	test/test.c	/^#define GLM_FORCE_DEPTH_ZERO_TO_ONE$/;"	d	file:
+GLM_FORCE_RADIANS	test/test.c	/^#define GLM_FORCE_RADIANS$/;"	d	file:
+HEIGHT	src/main.c	/^constexpr uint32_t HEIGHT = 600;$/;"	v	typeref:typename:constexpr uint32_t
 LDFLAGS	makefile	/^LDFLAGS = $/;"	m
+SRCS	makefile	/^SRCS = src\/main.c$/;"	m
+TARGET	makefile	/^TARGET = bin\/renderer$/;"	m
+WIDTH	src/main.c	/^constexpr uint32_t WIDTH = 800;$/;"	v	typeref:typename:constexpr uint32_t
+arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:0
 bin	makefile	/^bin:$/;"	t
-bin/renderer	makefile	/^bin\/renderer: src\/*.c | bin$/;"	t
+bin/renderer	makefile	/^bin\/renderer: $(SRCS) | bin$/;"	t
+build	makefile	/^build:$/;"	t
 clean	makefile	/^clean:$/;"	t
+cleanUp	src/main.c	/^static void cleanUp() {$/;"	f	typeref:typename:void	file:
+clean_build	makefile	/^clean_build:$/;"	t
+compile_commands.json	makefile	/^compile_commands.json: $(SRCS)$/;"	t
+createInstance	src/main.c	/^static VkResult createInstance() {$/;"	f	typeref:typename:VkResult	file:
+directory	compile_commands.json	/^    "directory": "\/Users\/shaikhammar\/Documents\/Programming\/graphics\/vulkan_renderer",$/;"	s	object:0
+file	compile_commands.json	/^    "file": "src\/main.c",$/;"	s	object:0
+initVulkan	src/main.c	/^static void initVulkan() {$/;"	f	typeref:typename:void	file:
+initWindow	src/main.c	/^static void initWindow() {$/;"	f	typeref:typename:void	file:
+instance	src/main.c	/^static VkInstance instance;$/;"	v	typeref:typename:VkInstance	file:
 main	src/main.c	/^int main() {$/;"	f	typeref:typename:int
+main	test/test.c	/^int main() {$/;"	f	typeref:typename:int
+mainLoop	src/main.c	/^static void mainLoop() {$/;"	f	typeref:typename:void	file:
+output	compile_commands.json	/^    "output": "bin\/renderer"$/;"	s	object:0
 run	makefile	/^run: $/;"	t
+run	src/main.c	/^void run() {$/;"	f	typeref:typename:void
+window	src/main.c	/^static GLFWwindow *window;$/;"	v	typeref:typename:GLFWwindow *	file:
