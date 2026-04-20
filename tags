@@ -112,13 +112,15 @@ file	compile_commands.json	/^    "file": "src\/main.c",$/;"	s	object:0
 initVulkan	src/main.c	/^static bool initVulkan() {$/;"	f	typeref:typename:bool	file:
 initWindow	src/main.c	/^static bool initWindow() {$/;"	f	typeref:typename:bool	file:
 instance	src/main.c	/^VkInstance instance;$/;"	v	typeref:typename:VkInstance
-isDeviceSuitable	src/main.c	/^bool isDeviceSuitable([[maybe_unused]] VkPhysicalDevice device) {$/;"	f	typeref:typename:bool
+isDeviceSuitable	src/main.c	/^bool isDeviceSuitable(VkPhysicalDevice device) {$/;"	f	typeref:typename:bool
 main	src/main.c	/^int main() {$/;"	f	typeref:typename:int
 main	test/test.c	/^int main() {$/;"	f	typeref:typename:int
 mainLoop	src/main.c	/^static void mainLoop() {$/;"	f	typeref:typename:void	file:
 output	compile_commands.json	/^    "output": "bin\/renderer"$/;"	s	object:0
 physicalDevice	src/main.c	/^VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;$/;"	v	typeref:typename:VkPhysicalDevice
 pickPhysicalDevice	src/main.c	/^static bool pickPhysicalDevice() {$/;"	f	typeref:typename:bool	file:
+requiredDeviceExtensions	src/main.c	/^const char *requiredDeviceExtensions[requiredDeviceExtensionsCount] = {VK_KHR_SWAPCHAIN_EXTENSIO/;"	v	typeref:typename:const char * []
+requiredDeviceExtensionsCount	src/main.c	/^constexpr uint32_t requiredDeviceExtensionsCount = 1;$/;"	v	typeref:typename:constexpr uint32_t
 requiredExtensions	src/main.c	/^static const char **requiredExtensions = nullptr;$/;"	v	typeref:typename:const char **	file:
 requiredExtensionsCount	src/main.c	/^static uint32_t requiredExtensionsCount = 0;$/;"	v	typeref:typename:uint32_t	file:
 run	makefile	/^run: $/;"	t

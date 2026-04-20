@@ -7,6 +7,23 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *			WINDOW CREATION
+ *
+ *	A window is created using GLFW with no API option to prevent
+ *	it from opening an OpenGL contex
+ *
+ *	Global variables:
+ *		WIDTH
+ *		HEIGHT
+ *		window
+ *
+ *	Functions:
+ *		initWindow()
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
 constexpr uint32_t WIDTH = 800;
 constexpr uint32_t HEIGHT = 600;
 GLFWwindow *window;
@@ -23,6 +40,25 @@ static bool initWindow() {
 	return true;
 }
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *			INSTANCE CREATION
+ *
+ *	A vulkan instance is created.
+ *	Validation layers are checked if program is in debug mode.
+ *	Required extensions are checked for GLFW and MoltenVk if program is in MAC_OS mode
+ *
+ *	Global variables:
+ *		enableValidationLayers
+ *		validationLayers[validationLayersCount]
+ *		requiredExtensions[requiredExtensionsCount]
+ *		instance
+ *
+ *	Functions:
+ *		checkExtensionSupport()
+ *		createInstance()
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
 #ifdef NDEBUG
 constexpr bool enableValidationLayers = false;
 #else
@@ -133,6 +169,7 @@ static VkResult createInstance() {
 
 	VkInstanceCreateInfo createInfo;
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+	createInfo.pNext = nullptr;
 	createInfo.pApplicationInfo = &appInfo;
 	createInfo.enabledExtensionCount = requiredExtensionsCount;
 	createInfo.ppEnabledExtensionNames = requiredExtensions;
@@ -161,20 +198,92 @@ static VkResult createInstance() {
 		return result;
 }
 
-VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-bool isDeviceSuitable([[maybe_unused]] VkPhysicalDevice device) {
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *			PHYSICAL DEVICE CHOICE
+ *
+ * 	A physical device is chosen.
+ *
+ *	Global variables:
+ * 		requiredDeviceExtensions
+ * 		physicalDevice
+ *
+ *	Functions:
+ *		isDeviceSuitable()
+ *		pickPhysicalDevice()
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
+constexpr uint32_t requiredDeviceExtensionsCount = 1;
+const char *requiredDeviceExtensions[requiredDeviceExtensionsCount] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+bool isDeviceSuitable(VkPhysicalDevice device) {
+	// check if device supports api version 1.3 or higher
 	VkPhysicalDeviceProperties2 deviceProperies;
 	deviceProperies.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 	deviceProperies.pNext = nullptr;
 	vkGetPhysicalDeviceProperties2(device, &deviceProperies);
+	bool isApiVersionSupported = deviceProperies.properties.apiVersion >= VK_API_VERSION_1_3;
 
-	[[maybe_unused]] VkPhysicalDeviceFeatures2 deviceFeatures;
+	// check if dynamic rendering and extended dynamic state features are supported
+	VkPhysicalDeviceExtendedDynamicStateFeaturesEXT deviceVulkanExtendedDynamicStateFeaturesEXT;
+	deviceVulkanExtendedDynamicStateFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+	deviceVulkanExtendedDynamicStateFeaturesEXT.pNext = nullptr;
+
+	VkPhysicalDeviceVulkan13Features deviceVulkan13Features;
+	deviceVulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+	deviceVulkan13Features.pNext = &deviceVulkanExtendedDynamicStateFeaturesEXT;
+
+	VkPhysicalDeviceFeatures2 deviceFeatures;
 	deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-	deviceFeatures.pNext = nullptr;
-	vkGetPhysicalDeviceFeatures2(device, &deviceFeatures);
+	deviceFeatures.pNext = &deviceVulkan13Features;
 
-	return deviceProperies.properties.apiVersion >= VK_API_VERSION_1_3;
+	vkGetPhysicalDeviceFeatures2(device, &deviceFeatures);
+	bool isAllFeaturesSupported = deviceVulkan13Features.dynamicRendering 
+		&& deviceVulkanExtendedDynamicStateFeaturesEXT.extendedDynamicState;
+
+	// check if requireds extensions are supported
+	bool isAllDeviceExtensionsSupported = true;
+	uint32_t supportedDeviceExtensionPropertiesCount;
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &supportedDeviceExtensionPropertiesCount, nullptr);
+	VkExtensionProperties *supportedDeviceExtensionProperties 
+		= malloc(sizeof(VkExtensionProperties)*supportedDeviceExtensionPropertiesCount);
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &supportedDeviceExtensionPropertiesCount, supportedDeviceExtensionProperties);
+	for(uint32_t i = 0; i < requiredDeviceExtensionsCount; i++) {
+		bool found = false;
+		for (uint32_t j = 0; j < supportedDeviceExtensionPropertiesCount; j++) {
+			if (!strcmp(requiredDeviceExtensions[i], supportedDeviceExtensionProperties[j].extensionName)) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			isAllDeviceExtensionsSupported = false;
+			break;
+		}
+	}
+
+	// check if there is queue family supporting graphics commands
+	bool existsGraphicsFamily = false;
+	uint32_t queueFamiliesCount;
+	vkGetPhysicalDeviceQueueFamilyProperties2(device, &queueFamiliesCount, nullptr);
+	VkQueueFamilyProperties2 *queueFamiliesProperties = malloc(sizeof(VkQueueFamilyProperties2)*queueFamiliesCount);
+	for (uint32_t i = 0; i < queueFamiliesCount; i++) {
+		queueFamiliesProperties[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2;
+		queueFamiliesProperties[i].pNext = nullptr;
+	}
+	vkGetPhysicalDeviceQueueFamilyProperties2(device, &queueFamiliesCount, queueFamiliesProperties);
+	for (uint32_t i = 0; i < queueFamiliesCount; i++) {
+		if (queueFamiliesProperties[i].queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+			existsGraphicsFamily = true;
+			break;
+		}
+	}
+	free(queueFamiliesProperties);
+	queueFamiliesProperties = nullptr;
+
+	return isApiVersionSupported && existsGraphicsFamily && isAllFeaturesSupported && isAllDeviceExtensionsSupported;
 }
+
+VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 static bool pickPhysicalDevice() {
 	uint32_t physicalDevicesCount = 0;
 	vkEnumeratePhysicalDevices(instance, &physicalDevicesCount, nullptr);
