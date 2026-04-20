@@ -9,28 +9,54 @@
 
 constexpr uint32_t WIDTH = 800;
 constexpr uint32_t HEIGHT = 600;
-static GLFWwindow *window;
-
-uint32_t requiredExtensionsCount = 0;
-const char **requiredExtensions = nullptr;
-
-constexpr uint32_t validationLayersCount = 1;
-const char *validationLayers[validationLayersCount] = {"VK_LAYER_KHRONOS_validation"};
+GLFWwindow *window;
+static bool initWindow() {
+	glfwInit();
+	// prevent GLFW from loading openGL
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+	if (window == nullptr) {
+		fprintf(stderr, "Unable to create GLFW window\n");
+		return false;
+	}
+	return true;
+}
 
 #ifdef NDEBUG
 constexpr bool enableValidationLayers = false;
 #else
 constexpr bool enableValidationLayers = true;
 #endif
+static constexpr uint32_t validationLayersCount = 1;
+static const char *validationLayers[validationLayersCount] = {"VK_LAYER_KHRONOS_validation"};
+static bool checkValidationLayerSupport() {
+	bool allSupported = true;
 
-static void initWindow() {
-	glfwInit();
-	// prevent GLFW from loading openGL
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-	window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+	uint32_t supportedLayersNum = 0;
+	vkEnumerateInstanceLayerProperties(&supportedLayersNum, nullptr);
+	VkLayerProperties supportedLayers[supportedLayersNum];
+	vkEnumerateInstanceLayerProperties(&supportedLayersNum, supportedLayers);
+
+	for (uint32_t i = 0; i < validationLayersCount; i++) {
+		bool found = false;
+		for (uint32_t j = 0; j < supportedLayersNum; j++) {
+			if (strcmp(validationLayers[i], supportedLayers[j].layerName) == 0) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			fprintf(stderr, "Validation layer %s is not supported\n", validationLayers[i]);
+			allSupported = false;
+		}
+	}
+
+	return allSupported;
 }
 
+static uint32_t requiredExtensionsCount = 0;
+static const char **requiredExtensions = nullptr;
 static bool checkExtensionSupport() {
 	bool allSupported = true;
 
@@ -61,32 +87,7 @@ static bool checkExtensionSupport() {
 	return allSupported;
 }
 
-static bool checkValidationLayerSupport() {
-	bool allSupported = true;
-
-	uint32_t supportedLayersNum = 0;
-	vkEnumerateInstanceLayerProperties(&supportedLayersNum, nullptr);
-	VkLayerProperties supportedLayers[supportedLayersNum];
-	vkEnumerateInstanceLayerProperties(&supportedLayersNum, supportedLayers);
-
-	for (uint32_t i = 0; i < validationLayersCount; i++) {
-		bool found = false;
-		for (uint32_t j = 0; j < supportedLayersNum; j++) {
-			if (strcmp(validationLayers[i], supportedLayers[j].layerName) == 0) {
-				found = true;
-				break;
-			}
-		}
-		if (!found) {
-			fprintf(stderr, "Validation layer %s is not supported\n", validationLayers[i]);
-			allSupported = false;
-		}
-	}
-
-	return allSupported;
-}
-
-static VkInstance instance;
+VkInstance instance;
 static VkResult createInstance() {
 	VkResult result = VK_SUCCESS;
 
@@ -119,7 +120,7 @@ static VkResult createInstance() {
 		result = VK_ERROR_EXTENSION_NOT_PRESENT;
 		goto failure;
 	}
-	puts("All required extensions are supported");
+	puts("");
 
 	VkApplicationInfo appInfo;
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -128,7 +129,7 @@ static VkResult createInstance() {
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.pEngineName = "No Engine";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_0;
+	appInfo.apiVersion = VK_API_VERSION_1_3;
 
 	VkInstanceCreateInfo createInfo;
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -160,8 +161,59 @@ static VkResult createInstance() {
 		return result;
 }
 
-static void initVulkan() {
-	createInstance();
+VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+bool isDeviceSuitable([[maybe_unused]] VkPhysicalDevice device) {
+	VkPhysicalDeviceProperties2 deviceProperies;
+	deviceProperies.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+	deviceProperies.pNext = nullptr;
+	vkGetPhysicalDeviceProperties2(device, &deviceProperies);
+
+	[[maybe_unused]] VkPhysicalDeviceFeatures2 deviceFeatures;
+	deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	deviceFeatures.pNext = nullptr;
+	vkGetPhysicalDeviceFeatures2(device, &deviceFeatures);
+
+	return deviceProperies.properties.apiVersion >= VK_API_VERSION_1_3;
+}
+static bool pickPhysicalDevice() {
+	uint32_t physicalDevicesCount = 0;
+	vkEnumeratePhysicalDevices(instance, &physicalDevicesCount, nullptr);
+	if (physicalDevicesCount == 0) {
+		fprintf(stderr, "Unable to find any GPU with Vulkan support\n");
+		return false;
+	}
+	VkPhysicalDevice availablePhysicalDevices[physicalDevicesCount];
+	vkEnumeratePhysicalDevices(instance, &physicalDevicesCount, availablePhysicalDevices);
+
+	puts("Found devices:");
+	for (uint32_t i = 0; i < physicalDevicesCount; i++) {
+		VkPhysicalDevice device = availablePhysicalDevices[i];
+		if (isDeviceSuitable(device) && physicalDevice == VK_NULL_HANDLE) {
+			physicalDevice = device;
+		}
+		VkPhysicalDeviceProperties2 deviceProperies;
+		deviceProperies.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+		deviceProperies.pNext = nullptr;
+		vkGetPhysicalDeviceProperties2(device, &deviceProperies);
+		printf("%d: %s\n", deviceProperies.properties.deviceID, deviceProperies.properties.deviceName);		
+	}
+	if (physicalDevice == VK_NULL_HANDLE) {
+		fprintf(stderr, "Unable to find any suitable GPU");
+		return false;
+	}
+	VkPhysicalDeviceProperties2 deviceProperies;
+	deviceProperies.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+	deviceProperies.pNext = nullptr;
+	vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperies);
+	printf("Picked device %d: %s\n", deviceProperies.properties.deviceID, deviceProperies.properties.deviceName);
+	puts("");
+	return true;
+}
+
+static bool initVulkan() {
+	if (createInstance() != VK_SUCCESS) return false;
+	if (!pickPhysicalDevice()) return false;
+	return true;
 }
 
 static void mainLoop() {
@@ -171,16 +223,17 @@ static void mainLoop() {
 }
 
 static void cleanUp() {
-	vkDestroyInstance(instance, nullptr);
-	glfwDestroyWindow(window);
+	if (instance) vkDestroyInstance(instance, nullptr);
+	if (window) glfwDestroyWindow(window);
 	glfwTerminate();
 }
 
-void run() {
-	initWindow();
-	initVulkan();
+static void run() {
+	if (!initWindow()) goto cleanup;
+	if (!initVulkan()) goto cleanup;
 	mainLoop();
-	cleanUp();
+	cleanup:
+		cleanUp();
 }
 
 int main() {

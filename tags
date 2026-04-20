@@ -109,17 +109,20 @@ directory	compile_commands.json	/^    "directory": "\/Users\/shaikhammar\/Docume
 enableValidationLayers	src/main.c	/^constexpr bool enableValidationLayers = false;$/;"	v	typeref:typename:constexpr bool
 enableValidationLayers	src/main.c	/^constexpr bool enableValidationLayers = true;$/;"	v	typeref:typename:constexpr bool
 file	compile_commands.json	/^    "file": "src\/main.c",$/;"	s	object:0
-initVulkan	src/main.c	/^static void initVulkan() {$/;"	f	typeref:typename:void	file:
-initWindow	src/main.c	/^static void initWindow() {$/;"	f	typeref:typename:void	file:
-instance	src/main.c	/^static VkInstance instance;$/;"	v	typeref:typename:VkInstance	file:
+initVulkan	src/main.c	/^static bool initVulkan() {$/;"	f	typeref:typename:bool	file:
+initWindow	src/main.c	/^static bool initWindow() {$/;"	f	typeref:typename:bool	file:
+instance	src/main.c	/^VkInstance instance;$/;"	v	typeref:typename:VkInstance
+isDeviceSuitable	src/main.c	/^bool isDeviceSuitable([[maybe_unused]] VkPhysicalDevice device) {$/;"	f	typeref:typename:bool
 main	src/main.c	/^int main() {$/;"	f	typeref:typename:int
 main	test/test.c	/^int main() {$/;"	f	typeref:typename:int
 mainLoop	src/main.c	/^static void mainLoop() {$/;"	f	typeref:typename:void	file:
 output	compile_commands.json	/^    "output": "bin\/renderer"$/;"	s	object:0
-requiredExtensions	src/main.c	/^const char **requiredExtensions = nullptr;$/;"	v	typeref:typename:const char **
-requiredExtensionsCount	src/main.c	/^uint32_t requiredExtensionsCount = 0;$/;"	v	typeref:typename:uint32_t
+physicalDevice	src/main.c	/^VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;$/;"	v	typeref:typename:VkPhysicalDevice
+pickPhysicalDevice	src/main.c	/^static bool pickPhysicalDevice() {$/;"	f	typeref:typename:bool	file:
+requiredExtensions	src/main.c	/^static const char **requiredExtensions = nullptr;$/;"	v	typeref:typename:const char **	file:
+requiredExtensionsCount	src/main.c	/^static uint32_t requiredExtensionsCount = 0;$/;"	v	typeref:typename:uint32_t	file:
 run	makefile	/^run: $/;"	t
-run	src/main.c	/^void run() {$/;"	f	typeref:typename:void
-validationLayers	src/main.c	/^const char *validationLayers[validationLayersCount] = {"VK_LAYER_KHRONOS_validation"};$/;"	v	typeref:typename:const char * []
-validationLayersCount	src/main.c	/^constexpr uint32_t validationLayersCount = 1;$/;"	v	typeref:typename:constexpr uint32_t
-window	src/main.c	/^static GLFWwindow *window;$/;"	v	typeref:typename:GLFWwindow *	file:
+run	src/main.c	/^static void run() {$/;"	f	typeref:typename:void	file:
+validationLayers	src/main.c	/^static const char *validationLayers[validationLayersCount] = {"VK_LAYER_KHRONOS_validation"};$/;"	v	typeref:typename:const char * []	file:
+validationLayersCount	src/main.c	/^static constexpr uint32_t validationLayersCount = 1;$/;"	v	typeref:typename:constexpr uint32_t	file:
+window	src/main.c	/^GLFWwindow *window;$/;"	v	typeref:typename:GLFWwindow *
