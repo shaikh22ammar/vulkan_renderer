@@ -31,7 +31,7 @@
 constexpr uint32_t WIDTH = 800;
 constexpr uint32_t HEIGHT = 600;
 GLFWwindow *window;
-static bool initWindow() {
+static VkResult initWindow() {
 	glfwInit();
 	// prevent GLFW from loading openGL
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -39,9 +39,9 @@ static bool initWindow() {
 	window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
 	if (window == nullptr) {
 		fprintf(stderr, "Unable to create GLFW window\n");
-		return false;
+		return VK_ERROR_INITIALIZATION_FAILED;
 	}
-	return true;
+	return VK_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -70,8 +70,8 @@ constexpr bool enableValidationLayers = true;
 #endif
 static constexpr uint32_t validationLayersCount = 1;
 static const char *validationLayers[validationLayersCount] = {"VK_LAYER_KHRONOS_validation"};
-static bool checkValidationLayerSupport() {
-	bool allSupported = true;
+static VkResult checkValidationLayerSupport() {
+	VkResult result = VK_SUCCESS;
 
 	uint32_t supportedLayersNum = 0;
 	vkEnumerateInstanceLayerProperties(&supportedLayersNum, nullptr);
@@ -88,17 +88,17 @@ static bool checkValidationLayerSupport() {
 		}
 		if (!found) {
 			fprintf(stderr, "Validation layer %s is not supported\n", validationLayers[i]);
-			allSupported = false;
+			result = VK_ERROR_LAYER_NOT_PRESENT;
 		}
 	}
 
-	return allSupported;
+	return result;
 }
 
 static uint32_t requiredExtensionsCount = 0;
 static const char **requiredExtensions = nullptr;
-static bool checkExtensionSupport() {
-	bool allSupported = true;
+static VkResult checkExtensionSupport() {
+	VkResult result = VK_SUCCESS;
 
 	uint32_t supportedExtensionsNum = 0;
 	vkEnumerateInstanceExtensionProperties(nullptr, &supportedExtensionsNum, nullptr);
@@ -114,27 +114,29 @@ static bool checkExtensionSupport() {
 		}
 		if (!found) {
 			fprintf(stderr, "Required extension %s is not supported\n", requiredExtensions[i]);
-			allSupported = false;
+			result = VK_ERROR_EXTENSION_NOT_PRESENT;
 		}
 	}
 
-	return allSupported;
+	return result;
 }
 
 VkInstance instance;
 static VkResult createInstance() {
 	VkResult result = VK_SUCCESS;
 
-	if (enableValidationLayers && !checkValidationLayerSupport()) {
-		return VK_ERROR_LAYER_NOT_PRESENT;
+	// Checking validation layer support
+	if (enableValidationLayers) {
+		VkResult result = checkValidationLayerSupport();
+		if (result < VK_SUCCESS) return result;
 	}
 
+	// Finding required extensions
 	uint32_t glfwExtensionCount = 0;
 	const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
 	requiredExtensionsCount = glfwExtensionCount;
-	#ifdef MAC_OS
-	// one more portability extension is required for MoltenVk
+	#ifdef MAC_OS // portability extension is required for MoltenVk
 	requiredExtensionsCount++;
 	#endif
 	requiredExtensions = malloc((sizeof *glfwExtensions) * requiredExtensionsCount);
@@ -152,9 +154,9 @@ static VkResult createInstance() {
 	requiredExtensions[requiredExtensionsCount - 1] = VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME;
 	printf("%s\n", VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 	#endif
+
 	// Checking for extension support
-	if (!checkExtensionSupport()) {
-		result = VK_ERROR_EXTENSION_NOT_PRESENT;
+	if ((result = checkExtensionSupport()) < VK_SUCCESS) {
 		goto failure;
 	}
 	puts("");
@@ -184,8 +186,8 @@ static VkResult createInstance() {
 	createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 	#endif
 
-	result = vkCreateInstance(&createInfo, nullptr, &instance);
-	if (result != VK_SUCCESS) {
+	
+	if ((result = vkCreateInstance(&createInfo, nullptr, &instance)) < VK_SUCCESS) {
 		fprintf(stderr, "vkCreateInstance failed with exit code: %d\n", result);
 		goto failure;
 	}
@@ -207,6 +209,7 @@ static VkResult createInstance() {
  *
  *	Global variables:
  * 		requiredDeviceExtensions
+ *		requiredDeviceExtensionsCount
  *		requiredGraphicsCommandsQueueFamilyIndex
  * 		physicalDevice
  *
@@ -222,7 +225,7 @@ const char *requiredDeviceExtensions[requiredDeviceExtensionsCount + 1] = {
 };
 bool isPortabilitySubsetRequired = false;
 struct {uint32_t graphicsFamily;} requiredGraphicsCommandsQueueFamilyIndex;
-bool isDeviceSuitable(VkPhysicalDevice device) {
+static bool isDeviceSuitable(VkPhysicalDevice device) {
 	// check if device supports api version 1.3 or higher
 	VkPhysicalDeviceProperties2 deviceProperies;
 	deviceProperies.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
@@ -350,7 +353,7 @@ static bool pickPhysicalDevice() {
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
 VkDevice device;
-VkResult createLogicalDevice() {
+static VkResult createLogicalDevice() {
 	// Specifying queues
 	float queuePriority = 0.5f;
 	VkDeviceQueueCreateInfo deviceQueueCreateInfo = {0};
@@ -383,14 +386,23 @@ VkResult createLogicalDevice() {
 	deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
 	deviceCreateInfo.enabledExtensionCount = requiredDeviceExtensionsCount + isPortabilitySubsetRequired;
 	deviceCreateInfo.ppEnabledExtensionNames = requiredDeviceExtensions;
-	return vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device);
+
+	VkResult result = VK_SUCCESS;
+
+	if ((result = vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device)) < VK_SUCCESS) {
+		fprintf(stderr, "vkCreateDevice failed with exit code: %d\n", result);
+		return result;
+	}
+
+	return result;
 }
 
-static bool initVulkan() {
-	if (createInstance() != VK_SUCCESS) return false;
-	if (!pickPhysicalDevice()) return false;
-	if (createLogicalDevice() != VK_SUCCESS) return false;
-	return true;
+static VkResult initVulkan() {
+	VkResult result = VK_SUCCESS;
+	if ((result = createInstance()) < VK_SUCCESS) return result;
+	if ((result = pickPhysicalDevice()) < VK_SUCCESS) return result;
+	if ((result = createLogicalDevice()) < VK_SUCCESS) return result;
+	return result;
 }
 
 static void mainLoop() {
@@ -407,8 +419,8 @@ static void cleanUp() {
 }
 
 static void run() {
-	if (!initWindow()) goto cleanup;
-	if (!initVulkan()) goto cleanup;
+	if (initWindow() < VK_SUCCESS) goto cleanup;
+	if (initVulkan() < VK_SUCCESS) goto cleanup;
 	mainLoop();
 	cleanup:
 		cleanUp();
