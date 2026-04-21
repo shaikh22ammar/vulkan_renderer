@@ -92,6 +92,7 @@ LDFLAGS	makefile	/^LDFLAGS = $/;"	m
 SRCS	makefile	/^SRCS = src\/main.c$/;"	m
 TARGET	makefile	/^TARGET = bin\/renderer$/;"	m
 WIDTH	src/main.c	/^constexpr uint32_t WIDTH = 800;$/;"	v	typeref:typename:constexpr uint32_t
+__anon6a96e1720108	src/main.c	/^struct {uint32_t graphicsFamily;} requiredGraphicsCommandsQueueFamilyIndex;$/;"	s	file:
 arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:0
 bin	makefile	/^bin:$/;"	t
 bin/renderer	makefile	/^bin\/renderer: $(SRCS) | bin$/;"	t
@@ -103,26 +104,31 @@ clean	makefile	/^clean:$/;"	t
 cleanUp	src/main.c	/^static void cleanUp() {$/;"	f	typeref:typename:void	file:
 compile_commands.json	makefile	/^compile_commands.json: $(SRCS)$/;"	t
 createInstance	src/main.c	/^static VkResult createInstance() {$/;"	f	typeref:typename:VkResult	file:
+createLogicalDevice	src/main.c	/^VkResult createLogicalDevice() {$/;"	f	typeref:typename:VkResult
 debug	makefile	/^debug: $(TARGET)$/;"	t
 debug	makefile	/^debug: CFLAGS += -g -O0$/;"	t
+device	src/main.c	/^VkDevice device;$/;"	v	typeref:typename:VkDevice
 directory	compile_commands.json	/^    "directory": "\/Users\/shaikhammar\/Documents\/Programming\/graphics\/vulkan_renderer",$/;"	s	object:0
 enableValidationLayers	src/main.c	/^constexpr bool enableValidationLayers = false;$/;"	v	typeref:typename:constexpr bool
 enableValidationLayers	src/main.c	/^constexpr bool enableValidationLayers = true;$/;"	v	typeref:typename:constexpr bool
 file	compile_commands.json	/^    "file": "src\/main.c",$/;"	s	object:0
+graphicsFamily	src/main.c	/^struct {uint32_t graphicsFamily;} requiredGraphicsCommandsQueueFamilyIndex;$/;"	m	struct:__anon6a96e1720108	typeref:typename:uint32_t	file:
 initVulkan	src/main.c	/^static bool initVulkan() {$/;"	f	typeref:typename:bool	file:
 initWindow	src/main.c	/^static bool initWindow() {$/;"	f	typeref:typename:bool	file:
 instance	src/main.c	/^VkInstance instance;$/;"	v	typeref:typename:VkInstance
 isDeviceSuitable	src/main.c	/^bool isDeviceSuitable(VkPhysicalDevice device) {$/;"	f	typeref:typename:bool
+isPortabilitySubsetRequired	src/main.c	/^bool isPortabilitySubsetRequired = false;$/;"	v	typeref:typename:bool
 main	src/main.c	/^int main() {$/;"	f	typeref:typename:int
 main	test/test.c	/^int main() {$/;"	f	typeref:typename:int
 mainLoop	src/main.c	/^static void mainLoop() {$/;"	f	typeref:typename:void	file:
 output	compile_commands.json	/^    "output": "bin\/renderer"$/;"	s	object:0
 physicalDevice	src/main.c	/^VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;$/;"	v	typeref:typename:VkPhysicalDevice
 pickPhysicalDevice	src/main.c	/^static bool pickPhysicalDevice() {$/;"	f	typeref:typename:bool	file:
-requiredDeviceExtensions	src/main.c	/^const char *requiredDeviceExtensions[requiredDeviceExtensionsCount] = {VK_KHR_SWAPCHAIN_EXTENSIO/;"	v	typeref:typename:const char * []
+requiredDeviceExtensions	src/main.c	/^const char *requiredDeviceExtensions[requiredDeviceExtensionsCount + 1] = {$/;"	v	typeref:typename:const char * []
 requiredDeviceExtensionsCount	src/main.c	/^constexpr uint32_t requiredDeviceExtensionsCount = 1;$/;"	v	typeref:typename:constexpr uint32_t
 requiredExtensions	src/main.c	/^static const char **requiredExtensions = nullptr;$/;"	v	typeref:typename:const char **	file:
 requiredExtensionsCount	src/main.c	/^static uint32_t requiredExtensionsCount = 0;$/;"	v	typeref:typename:uint32_t	file:
+requiredGraphicsCommandsQueueFamilyIndex	src/main.c	/^struct {uint32_t graphicsFamily;} requiredGraphicsCommandsQueueFamilyIndex;$/;"	v	typeref:struct:__anon6a96e1720108
 run	makefile	/^run: $/;"	t
 run	src/main.c	/^static void run() {$/;"	f	typeref:typename:void	file:
 validationLayers	src/main.c	/^static const char *validationLayers[validationLayersCount] = {"VK_LAYER_KHRONOS_validation"};$/;"	v	typeref:typename:const char * []	file:

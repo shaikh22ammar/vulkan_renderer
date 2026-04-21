@@ -7,6 +7,10 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#ifdef MAC_OS
+#include <vulkan/vulkan_beta.h>
+#endif
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
@@ -100,12 +104,6 @@ static bool checkExtensionSupport() {
 	vkEnumerateInstanceExtensionProperties(nullptr, &supportedExtensionsNum, nullptr);
 	VkExtensionProperties supportedExtensions[supportedExtensionsNum];
 	vkEnumerateInstanceExtensionProperties(nullptr, &supportedExtensionsNum, supportedExtensions);
-	printf("The following extensions are supported:\n");
-	for (uint32_t j = 0; j < supportedExtensionsNum; j++) {
-		printf("%s, ", supportedExtensions[j].extensionName);
-	}
-	printf("\n");
-
 	for (uint32_t i = 0; i < requiredExtensionsCount; i++) {
 		bool found = false;
 		for (uint32_t j = 0; j < supportedExtensionsNum; j++) {
@@ -145,11 +143,14 @@ static VkResult createInstance() {
 		result = VK_ERROR_OUT_OF_HOST_MEMORY;
 		goto failure;
 	}
+	puts("The following extensions are required:");
 	for (uint32_t i = 0; i < requiredExtensionsCount - 1; i++) {
 		requiredExtensions[i] = glfwExtensions[i];
+		printf("%s, ", requiredExtensions[i]);
 	}
 	#ifdef MAC_OS
 	requiredExtensions[requiredExtensionsCount - 1] = VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME;
+	printf("%s\n", VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 	#endif
 	// Checking for extension support
 	if (!checkExtensionSupport()) {
@@ -206,6 +207,7 @@ static VkResult createInstance() {
  *
  *	Global variables:
  * 		requiredDeviceExtensions
+ *		requiredGraphicsCommandsQueueFamilyIndex
  * 		physicalDevice
  *
  *	Functions:
@@ -214,7 +216,12 @@ static VkResult createInstance() {
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
 constexpr uint32_t requiredDeviceExtensionsCount = 1;
-const char *requiredDeviceExtensions[requiredDeviceExtensionsCount] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+const char *requiredDeviceExtensions[requiredDeviceExtensionsCount + 1] = {
+	VK_KHR_SWAPCHAIN_EXTENSION_NAME, 
+	VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
+};
+bool isPortabilitySubsetRequired = false;
+struct {uint32_t graphicsFamily;} requiredGraphicsCommandsQueueFamilyIndex;
 bool isDeviceSuitable(VkPhysicalDevice device) {
 	// check if device supports api version 1.3 or higher
 	VkPhysicalDeviceProperties2 deviceProperies;
@@ -254,12 +261,17 @@ bool isDeviceSuitable(VkPhysicalDevice device) {
 				found = true;
 				break;
 			}
+			if (!strcmp(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME, supportedDeviceExtensionProperties[j].extensionName)) {
+				isPortabilitySubsetRequired = true;
+			} 
 		}
 		if (!found) {
 			isAllDeviceExtensionsSupported = false;
 			break;
 		}
 	}
+	free(supportedDeviceExtensionProperties);
+	supportedDeviceExtensionProperties = nullptr;
 
 	// check if there is queue family supporting graphics commands
 	bool existsGraphicsFamily = false;
@@ -272,8 +284,13 @@ bool isDeviceSuitable(VkPhysicalDevice device) {
 	}
 	vkGetPhysicalDeviceQueueFamilyProperties2(device, &queueFamiliesCount, queueFamiliesProperties);
 	for (uint32_t i = 0; i < queueFamiliesCount; i++) {
-		if (queueFamiliesProperties[i].queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+		VkQueueFamilyProperties2 queueFamily = queueFamiliesProperties[i];
+		/*printf("Queue index: %u, queue flags: %B, queueCount: %d\n", 
+				i, queueFamily.queueFamilyProperties.queueFlags, queueFamily.queueFamilyProperties.queueCount);
+		*/
+		if (queueFamily.queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 			existsGraphicsFamily = true;
+			requiredGraphicsCommandsQueueFamilyIndex.graphicsFamily = i;
 			break;
 		}
 	}
@@ -297,14 +314,14 @@ static bool pickPhysicalDevice() {
 	puts("Found devices:");
 	for (uint32_t i = 0; i < physicalDevicesCount; i++) {
 		VkPhysicalDevice device = availablePhysicalDevices[i];
-		if (isDeviceSuitable(device) && physicalDevice == VK_NULL_HANDLE) {
-			physicalDevice = device;
-		}
 		VkPhysicalDeviceProperties2 deviceProperies;
 		deviceProperies.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 		deviceProperies.pNext = nullptr;
 		vkGetPhysicalDeviceProperties2(device, &deviceProperies);
 		printf("%d: %s\n", deviceProperies.properties.deviceID, deviceProperies.properties.deviceName);		
+		if (isDeviceSuitable(device) && physicalDevice == VK_NULL_HANDLE) {
+			physicalDevice = device;
+		}
 	}
 	if (physicalDevice == VK_NULL_HANDLE) {
 		fprintf(stderr, "Unable to find any suitable GPU");
@@ -319,9 +336,60 @@ static bool pickPhysicalDevice() {
 	return true;
 }
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *			LOGICAL DEVICE CREATION
+ *
+ * 	A logical device is created.
+ *
+ *	Global variables:
+ *		device
+ *
+ *	Functions:
+ *		createLogicalDevice()
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
+VkDevice device;
+VkResult createLogicalDevice() {
+	// Specifying queues
+	float queuePriority = 0.5f;
+	VkDeviceQueueCreateInfo deviceQueueCreateInfo = {0};
+	deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	deviceQueueCreateInfo.pNext = nullptr;
+	deviceQueueCreateInfo.queueFamilyIndex = requiredGraphicsCommandsQueueFamilyIndex.graphicsFamily;
+	deviceQueueCreateInfo.queueCount = 1;
+	deviceQueueCreateInfo.pQueuePriorities = &queuePriority;
+	
+	// Specifying features
+	VkPhysicalDeviceExtendedDynamicStateFeaturesEXT deviceVulkanExtendedDynamicStateFeaturesEXT = {0};
+	deviceVulkanExtendedDynamicStateFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+	deviceVulkanExtendedDynamicStateFeaturesEXT.pNext = nullptr;
+	deviceVulkanExtendedDynamicStateFeaturesEXT.extendedDynamicState = VK_TRUE;
+
+	VkPhysicalDeviceVulkan13Features deviceVulkan13Features = {0};
+	deviceVulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+	deviceVulkan13Features.pNext = &deviceVulkanExtendedDynamicStateFeaturesEXT;
+	deviceVulkan13Features.dynamicRendering = VK_TRUE;
+
+	VkPhysicalDeviceFeatures2 deviceFeatures = {0};
+	deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	deviceFeatures.pNext = &deviceVulkan13Features;
+
+	// Creating logical device
+	VkDeviceCreateInfo deviceCreateInfo = {0};
+	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	deviceCreateInfo.pNext = &deviceFeatures;
+	deviceCreateInfo.queueCreateInfoCount = 1;
+	deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
+	deviceCreateInfo.enabledExtensionCount = requiredDeviceExtensionsCount + isPortabilitySubsetRequired;
+	deviceCreateInfo.ppEnabledExtensionNames = requiredDeviceExtensions;
+	return vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device);
+}
+
 static bool initVulkan() {
 	if (createInstance() != VK_SUCCESS) return false;
 	if (!pickPhysicalDevice()) return false;
+	if (createLogicalDevice() != VK_SUCCESS) return false;
 	return true;
 }
 
@@ -332,6 +400,7 @@ static void mainLoop() {
 }
 
 static void cleanUp() {
+	if (device) vkDestroyDevice(device, nullptr);
 	if (instance) vkDestroyInstance(instance, nullptr);
 	if (window) glfwDestroyWindow(window);
 	glfwTerminate();
