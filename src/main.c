@@ -41,8 +41,8 @@ static void run() {
 	if (initWindow() < VK_SUCCESS) goto cleanup;
 	if (initVulkan() < VK_SUCCESS) goto cleanup;
 	mainLoop();
-	cleanup:
-		cleanUp();
+cleanup:
+	cleanUp();
 }
 
 int main() {

@@ -178,12 +178,12 @@ static VkResult createInstance() {
 	requiredInstanceExtensions = nullptr;
 	return result;
 
-	failure:
-		if (requiredInstanceExtensions != nullptr) {
-			free(requiredInstanceExtensions);
-			requiredInstanceExtensions = nullptr;
-		}
-		return result;
+failure:
+	if (requiredInstanceExtensions != nullptr) {
+		free(requiredInstanceExtensions);
+		requiredInstanceExtensions = nullptr;
+	}
+	return result;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
