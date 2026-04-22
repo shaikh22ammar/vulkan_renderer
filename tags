@@ -8,7 +8,6 @@
 !_TAG_FIELD_DESCRIPTION	name	/tag name/
 !_TAG_FIELD_DESCRIPTION	pattern	/pattern/
 !_TAG_FIELD_DESCRIPTION	typeref	/Type and name of a variable or typedef/
-!_TAG_FIELD_DESCRIPTION!XML	uri	/uri associated with name prefix/
 !_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
 !_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
 !_TAG_KIND_DESCRIPTION!C	d,macro	/macro definitions/
@@ -30,11 +29,6 @@
 !_TAG_KIND_DESCRIPTION!Make	I,makefile	/makefiles/
 !_TAG_KIND_DESCRIPTION!Make	m,macro	/macros/
 !_TAG_KIND_DESCRIPTION!Make	t,target	/targets/
-!_TAG_KIND_DESCRIPTION!PlistXML	k,key	/keys/
-!_TAG_KIND_DESCRIPTION!XML	i,id	/id attributes/
-!_TAG_KIND_DESCRIPTION!XML	n,nsprefix	/namespace prefixes/
-!_TAG_KIND_DESCRIPTION!XML	r,root	/root elements/
-!_TAG_KIND_DESCRIPTION!Yaml	a,anchor	/anchors/
 !_TAG_OUTPUT_EXCMD	mixed	/number, pattern, mixed, or combineV2/
 !_TAG_OUTPUT_FILESEP	slash	/slash or backslash/
 !_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
@@ -42,9 +36,6 @@
 !_TAG_PARSER_VERSION!C	1.1	/current.age/
 !_TAG_PARSER_VERSION!JSON	0.0	/current.age/
 !_TAG_PARSER_VERSION!Make	1.1	/current.age/
-!_TAG_PARSER_VERSION!PlistXML	0.0	/current.age/
-!_TAG_PARSER_VERSION!XML	0.0	/current.age/
-!_TAG_PARSER_VERSION!Yaml	0.0	/current.age/
 !_TAG_PATTERN_LENGTH_LIMIT	96	/0 for no limit/
 !_TAG_PROC_CWD	/Users/shaikhammar/Documents/Programming/graphics/vulkan_renderer/	//
 !_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
@@ -58,81 +49,119 @@
 !_TAG_ROLE_DESCRIPTION!C!struct	foreigndecl	/declared in foreign languages/
 !_TAG_ROLE_DESCRIPTION!Make!makefile	included	/included/
 !_TAG_ROLE_DESCRIPTION!Make!makefile	optional	/optionally included/
-!_TAG_ROLE_DESCRIPTION!Yaml!anchor	alias	/alias/
+$(BUILD_DIR)	makefile	/^$(BUILD_DIR):$/;"	t
+$(OBJS_DIR)	makefile	/^$(OBJS_DIR): | $(BUILD_DIR)$/;"	t
+$(OBJS_DIR)/%.o	makefile	/^$(OBJS_DIR)\/%.o: $(SRC_DIR)\/%.c | $(OBJS_DIR)$/;"	t
+$(TARGET)	makefile	/^$(TARGET): $(OBJS) | $(BUILD_DIR)$/;"	t
 0	compile_commands.json	/^      "cc",$/;"	s	array:0.arguments
+0	compile_commands.json	/^      "cc",$/;"	s	array:1.arguments
+0	compile_commands.json	/^      "cc",$/;"	s	array:2.arguments
 0	compile_commands.json	/^  {$/;"	o
 1	compile_commands.json	/^      "-Wall",$/;"	s	array:0.arguments
-10	compile_commands.json	/^      "-O0",$/;"	s	array:0.arguments
-11	compile_commands.json	/^      "src\/main.c",$/;"	s	array:0.arguments
-12	compile_commands.json	/^      "-o",$/;"	s	array:0.arguments
-13	compile_commands.json	/^      "bin\/renderer"$/;"	s	array:0.arguments
+1	compile_commands.json	/^      "-Wall",$/;"	s	array:1.arguments
+1	compile_commands.json	/^      "-Wall",$/;"	s	array:2.arguments
+1	compile_commands.json	/^  {$/;"	o
+10	compile_commands.json	/^      "-g",$/;"	s	array:0.arguments
+10	compile_commands.json	/^      "-g",$/;"	s	array:1.arguments
+10	compile_commands.json	/^      "-g",$/;"	s	array:2.arguments
+11	compile_commands.json	/^      "-o",$/;"	s	array:0.arguments
+11	compile_commands.json	/^      "-o",$/;"	s	array:1.arguments
+11	compile_commands.json	/^      "-o",$/;"	s	array:2.arguments
+12	compile_commands.json	/^      "build\/objs\/initVulkan.o",$/;"	s	array:0.arguments
+12	compile_commands.json	/^      "build\/objs\/initWindow.o",$/;"	s	array:1.arguments
+12	compile_commands.json	/^      "build\/objs\/main.o",$/;"	s	array:2.arguments
+13	compile_commands.json	/^      "-c",$/;"	s	array:0.arguments
+13	compile_commands.json	/^      "-c",$/;"	s	array:1.arguments
+13	compile_commands.json	/^      "-c",$/;"	s	array:2.arguments
+14	compile_commands.json	/^      "src\/initVulkan.c"$/;"	s	array:0.arguments
+14	compile_commands.json	/^      "src\/initWindow.c"$/;"	s	array:1.arguments
+14	compile_commands.json	/^      "src\/main.c"$/;"	s	array:2.arguments
 2	compile_commands.json	/^      "-Wextra",$/;"	s	array:0.arguments
+2	compile_commands.json	/^      "-Wextra",$/;"	s	array:1.arguments
+2	compile_commands.json	/^      "-Wextra",$/;"	s	array:2.arguments
+2	compile_commands.json	/^  {$/;"	o
 3	compile_commands.json	/^      "-std=c23",$/;"	s	array:0.arguments
+3	compile_commands.json	/^      "-std=c23",$/;"	s	array:1.arguments
+3	compile_commands.json	/^      "-std=c23",$/;"	s	array:2.arguments
 4	compile_commands.json	/^      "-Wdouble-promotion",$/;"	s	array:0.arguments
+4	compile_commands.json	/^      "-Wdouble-promotion",$/;"	s	array:1.arguments
+4	compile_commands.json	/^      "-Wdouble-promotion",$/;"	s	array:2.arguments
 5	compile_commands.json	/^      "-Wfloat-conversion",$/;"	s	array:0.arguments
+5	compile_commands.json	/^      "-Wfloat-conversion",$/;"	s	array:1.arguments
+5	compile_commands.json	/^      "-Wfloat-conversion",$/;"	s	array:2.arguments
 6	compile_commands.json	/^      "-I\/usr\/local\/lib\/pkgconfig\/..\/..\/include",$/;"	s	array:0.arguments
+6	compile_commands.json	/^      "-I\/usr\/local\/lib\/pkgconfig\/..\/..\/include",$/;"	s	array:1.arguments
+6	compile_commands.json	/^      "-I\/usr\/local\/lib\/pkgconfig\/..\/..\/include",$/;"	s	array:2.arguments
 7	compile_commands.json	/^      "-I\/opt\/homebrew\/Cellar\/glfw\/3.4\/include",$/;"	s	array:0.arguments
+7	compile_commands.json	/^      "-I\/opt\/homebrew\/Cellar\/glfw\/3.4\/include",$/;"	s	array:1.arguments
+7	compile_commands.json	/^      "-I\/opt\/homebrew\/Cellar\/glfw\/3.4\/include",$/;"	s	array:2.arguments
 8	compile_commands.json	/^      "-DMAC_OS",$/;"	s	array:0.arguments
-9	compile_commands.json	/^      "-g",$/;"	s	array:0.arguments
+8	compile_commands.json	/^      "-DMAC_OS",$/;"	s	array:1.arguments
+8	compile_commands.json	/^      "-DMAC_OS",$/;"	s	array:2.arguments
+9	compile_commands.json	/^      "-O0",$/;"	s	array:0.arguments
+9	compile_commands.json	/^      "-O0",$/;"	s	array:1.arguments
+9	compile_commands.json	/^      "-O0",$/;"	s	array:2.arguments
+BUILD_DIR	makefile	/^BUILD_DIR = build$/;"	m
 CC	makefile	/^CC = cc$/;"	m
-CFBundleDevelopmentRegion	bin/renderer.dSYM/Contents/Info.plist	/^		<key>CFBundleDevelopmentRegion<\/key>$/;"	k
-CFBundleIdentifier	bin/renderer.dSYM/Contents/Info.plist	/^		<key>CFBundleIdentifier<\/key>$/;"	k
-CFBundleInfoDictionaryVersion	bin/renderer.dSYM/Contents/Info.plist	/^		<key>CFBundleInfoDictionaryVersion<\/key>$/;"	k
-CFBundlePackageType	bin/renderer.dSYM/Contents/Info.plist	/^		<key>CFBundlePackageType<\/key>$/;"	k
-CFBundleShortVersionString	bin/renderer.dSYM/Contents/Info.plist	/^		<key>CFBundleShortVersionString<\/key>$/;"	k
-CFBundleSignature	bin/renderer.dSYM/Contents/Info.plist	/^		<key>CFBundleSignature<\/key>$/;"	k
-CFBundleVersion	bin/renderer.dSYM/Contents/Info.plist	/^		<key>CFBundleVersion<\/key>$/;"	k
-CFLAGS	makefile	/^CFLAGS = -Wall -Wextra -std=c23$/;"	m
+CFLAGS	makefile	/^CFLAGS = $/;"	m
+GLFW_INCLUDE_VULKAN	src/initVulkan.c	/^#define GLFW_INCLUDE_VULKAN$/;"	d	file:
+GLFW_INCLUDE_VULKAN	src/initWindow.c	/^#define GLFW_INCLUDE_VULKAN$/;"	d	file:
 GLFW_INCLUDE_VULKAN	src/main.c	/^#define GLFW_INCLUDE_VULKAN$/;"	d	file:
 GLFW_INCLUDE_VULKAN	test/test.c	/^#define GLFW_INCLUDE_VULKAN$/;"	d	file:
 GLM_FORCE_DEPTH_ZERO_TO_ONE	test/test.c	/^#define GLM_FORCE_DEPTH_ZERO_TO_ONE$/;"	d	file:
 GLM_FORCE_RADIANS	test/test.c	/^#define GLM_FORCE_RADIANS$/;"	d	file:
-HEIGHT	src/main.c	/^constexpr uint32_t HEIGHT = 600;$/;"	v	typeref:typename:constexpr uint32_t
-LDFLAGS	makefile	/^LDFLAGS = $/;"	m
-SRCS	makefile	/^SRCS = src\/main.c$/;"	m
-TARGET	makefile	/^TARGET = bin\/renderer$/;"	m
-WIDTH	src/main.c	/^constexpr uint32_t WIDTH = 800;$/;"	v	typeref:typename:constexpr uint32_t
-__anon6a96e1720108	src/main.c	/^struct {uint32_t graphicsFamily;} requiredQueueCommandsQueueFamilyIndex;$/;"	s	file:
+HEIGHT	src/main.c	/^const uint32_t HEIGHT = 600;$/;"	v	typeref:typename:const uint32_t
+LDFLAGS	makefile	/^LDFLAGS =$/;"	m
+OBJS	makefile	/^OBJS = $(patsubst $(SRC_DIR)\/%, $(OBJS_DIR)\/%, $(SRCS:.c=.o))$/;"	m
+OBJS_DIR	makefile	/^OBJS_DIR = $(BUILD_DIR)\/objs$/;"	m
+SRCS	makefile	/^SRCS = $(wildcard src\/*.c)$/;"	m
+SRC_DIR	makefile	/^SRC_DIR = src$/;"	m
+TARGET	makefile	/^TARGET = $(BUILD_DIR)\/renderer$/;"	m
+WIDTH	src/main.c	/^const uint32_t WIDTH = 800;$/;"	v	typeref:typename:const uint32_t
+__anonce5309520108	src/initVulkan.c	/^static struct {uint32_t graphicsFamily;} requiredQueueCommandsQueueFamilyIndex;$/;"	s	file:
+all	makefile	/^all: $(TARGET)$/;"	t
 arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:0
-bin	makefile	/^bin:$/;"	t
-bin/renderer	makefile	/^bin\/renderer: $(SRCS) | bin$/;"	t
-build	makefile	/^build: $(TARGET)$/;"	t
-build	makefile	/^build: CFLAGS += -O2$/;"	t
-checkExtensionSupport	src/main.c	/^static VkResult checkExtensionSupport() {$/;"	f	typeref:typename:VkResult	file:
-checkValidationLayerSupport	src/main.c	/^static VkResult checkValidationLayerSupport() {$/;"	f	typeref:typename:VkResult	file:
+arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:1
+arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:2
+checkExtensionSupport	src/initVulkan.c	/^static VkResult checkExtensionSupport() {$/;"	f	typeref:typename:VkResult	file:
+checkValidationLayerSupport	src/initVulkan.c	/^static VkResult checkValidationLayerSupport() {$/;"	f	typeref:typename:VkResult	file:
 clean	makefile	/^clean:$/;"	t
 cleanUp	src/main.c	/^static void cleanUp() {$/;"	f	typeref:typename:void	file:
-compile_commands.json	makefile	/^compile_commands.json: $(SRCS)$/;"	t
-createInstance	src/main.c	/^static VkResult createInstance() {$/;"	f	typeref:typename:VkResult	file:
-createLogicalDevice	src/main.c	/^static VkResult createLogicalDevice() {$/;"	f	typeref:typename:VkResult	file:
-debug	makefile	/^debug: $(TARGET)$/;"	t
-debug	makefile	/^debug: CFLAGS += -g -O0$/;"	t
-device	src/main.c	/^VkDevice device;$/;"	v	typeref:typename:VkDevice
+createInstance	src/initVulkan.c	/^static VkResult createInstance() {$/;"	f	typeref:typename:VkResult	file:
+createLogicalDevice	src/initVulkan.c	/^static VkResult createLogicalDevice() {$/;"	f	typeref:typename:VkResult	file:
+device	src/main.c	/^VkDevice device = nullptr;$/;"	v	typeref:typename:VkDevice
 directory	compile_commands.json	/^    "directory": "\/Users\/shaikhammar\/Documents\/Programming\/graphics\/vulkan_renderer",$/;"	s	object:0
-enableValidationLayers	src/main.c	/^constexpr bool enableValidationLayers = false;$/;"	v	typeref:typename:constexpr bool
-enableValidationLayers	src/main.c	/^constexpr bool enableValidationLayers = true;$/;"	v	typeref:typename:constexpr bool
-file	compile_commands.json	/^    "file": "src\/main.c",$/;"	s	object:0
-graphicsFamily	src/main.c	/^struct {uint32_t graphicsFamily;} requiredQueueCommandsQueueFamilyIndex;$/;"	m	struct:__anon6a96e1720108	typeref:typename:uint32_t	file:
+directory	compile_commands.json	/^    "directory": "\/Users\/shaikhammar\/Documents\/Programming\/graphics\/vulkan_renderer",$/;"	s	object:1
+directory	compile_commands.json	/^    "directory": "\/Users\/shaikhammar\/Documents\/Programming\/graphics\/vulkan_renderer",$/;"	s	object:2
+enableValidationLayers	src/initVulkan.c	/^constexpr bool enableValidationLayers = false;$/;"	v	typeref:typename:constexpr bool
+enableValidationLayers	src/initVulkan.c	/^constexpr bool enableValidationLayers = true;$/;"	v	typeref:typename:constexpr bool
+file	compile_commands.json	/^    "file": "src\/initVulkan.c",$/;"	s	object:0
+file	compile_commands.json	/^    "file": "src\/initWindow.c",$/;"	s	object:1
+file	compile_commands.json	/^    "file": "src\/main.c",$/;"	s	object:2
+graphicsFamily	src/initVulkan.c	/^static struct {uint32_t graphicsFamily;} requiredQueueCommandsQueueFamilyIndex;$/;"	m	struct:__anonce5309520108	typeref:typename:uint32_t	file:
 graphicsQueue	src/main.c	/^VkQueue graphicsQueue = nullptr; $/;"	v	typeref:typename:VkQueue
-initQueueHandles	src/main.c	/^static VkResult initQueueHandles() {$/;"	f	typeref:typename:VkResult	file:
-initVulkan	src/main.c	/^static VkResult initVulkan() {$/;"	f	typeref:typename:VkResult	file:
-initWindow	src/main.c	/^static VkResult initWindow() {$/;"	f	typeref:typename:VkResult	file:
-instance	src/main.c	/^VkInstance instance;$/;"	v	typeref:typename:VkInstance
-isDeviceSuitable	src/main.c	/^static bool isDeviceSuitable(VkPhysicalDevice device) {$/;"	f	typeref:typename:bool	file:
-isPortabilitySubsetRequired	src/main.c	/^bool isPortabilitySubsetRequired = false;$/;"	v	typeref:typename:bool
+initQueueHandles	src/initVulkan.c	/^static VkResult initQueueHandles() {$/;"	f	typeref:typename:VkResult	file:
+initVulkan	src/initVulkan.c	/^VkResult initVulkan() {$/;"	f	typeref:typename:VkResult
+initWindow	src/initWindow.c	/^VkResult initWindow() {$/;"	f	typeref:typename:VkResult
+instance	src/main.c	/^VkInstance instance = nullptr;$/;"	v	typeref:typename:VkInstance
+isDebug	makefile	/^isDebug ?= true$/;"	m
+isDeviceSuitable	src/initVulkan.c	/^static bool isDeviceSuitable(VkPhysicalDevice device) {$/;"	f	typeref:typename:bool	file:
+isMacOS	makefile	/^isMacOS ?= true$/;"	m
+isPortabilitySubsetRequired	src/initVulkan.c	/^static bool isPortabilitySubsetRequired = false;$/;"	v	typeref:typename:bool	file:
 main	src/main.c	/^int main() {$/;"	f	typeref:typename:int
 main	test/test.c	/^int main() {$/;"	f	typeref:typename:int
 mainLoop	src/main.c	/^static void mainLoop() {$/;"	f	typeref:typename:void	file:
-output	compile_commands.json	/^    "output": "bin\/renderer"$/;"	s	object:0
+output	compile_commands.json	/^    "output": "build\/objs\/initVulkan.o"$/;"	s	object:0
+output	compile_commands.json	/^    "output": "build\/objs\/initWindow.o"$/;"	s	object:1
+output	compile_commands.json	/^    "output": "build\/objs\/main.o"$/;"	s	object:2
 physicalDevice	src/main.c	/^VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;$/;"	v	typeref:typename:VkPhysicalDevice
-pickPhysicalDevice	src/main.c	/^static bool pickPhysicalDevice() {$/;"	f	typeref:typename:bool	file:
-requiredDeviceExtensions	src/main.c	/^const char *requiredDeviceExtensions[requiredDeviceExtensionsCount + 1] = {$/;"	v	typeref:typename:const char * []
-requiredDeviceExtensionsCount	src/main.c	/^constexpr uint32_t requiredDeviceExtensionsCount = 1;$/;"	v	typeref:typename:constexpr uint32_t
-requiredInstanceExtensions	src/main.c	/^static const char **requiredInstanceExtensions = nullptr;$/;"	v	typeref:typename:const char **	file:
-requiredInstanceExtensionsCount	src/main.c	/^static uint32_t requiredInstanceExtensionsCount = 0;$/;"	v	typeref:typename:uint32_t	file:
-requiredQueueCommandsQueueFamilyIndex	src/main.c	/^struct {uint32_t graphicsFamily;} requiredQueueCommandsQueueFamilyIndex;$/;"	v	typeref:struct:__anon6a96e1720108
-run	makefile	/^run: $/;"	t
+pickPhysicalDevice	src/initVulkan.c	/^static bool pickPhysicalDevice() {$/;"	f	typeref:typename:bool	file:
+requiredDeviceExtensions	src/initVulkan.c	/^static const char *requiredDeviceExtensions[requiredDeviceExtensionsCount + 1] = {$/;"	v	typeref:typename:const char * []	file:
+requiredDeviceExtensionsCount	src/initVulkan.c	/^constexpr uint32_t requiredDeviceExtensionsCount = 1;$/;"	v	typeref:typename:constexpr uint32_t
+requiredInstanceExtensions	src/initVulkan.c	/^static const char **requiredInstanceExtensions = nullptr;$/;"	v	typeref:typename:const char **	file:
+requiredInstanceExtensionsCount	src/initVulkan.c	/^static uint32_t requiredInstanceExtensionsCount = 0;$/;"	v	typeref:typename:uint32_t	file:
+requiredQueueCommandsQueueFamilyIndex	src/initVulkan.c	/^static struct {uint32_t graphicsFamily;} requiredQueueCommandsQueueFamilyIndex;$/;"	v	typeref:struct:__anonce5309520108	file:
 run	src/main.c	/^static void run() {$/;"	f	typeref:typename:void	file:
-validationLayers	src/main.c	/^static const char *validationLayers[validationLayersCount] = {"VK_LAYER_KHRONOS_validation"};$/;"	v	typeref:typename:const char * []	file:
-validationLayersCount	src/main.c	/^static constexpr uint32_t validationLayersCount = 1;$/;"	v	typeref:typename:constexpr uint32_t	file:
+validationLayers	src/initVulkan.c	/^static const char *validationLayers[validationLayersCount] = {"VK_LAYER_KHRONOS_validation"};$/;"	v	typeref:typename:const char * []	file:
+validationLayersCount	src/initVulkan.c	/^static constexpr uint32_t validationLayersCount = 1;$/;"	v	typeref:typename:constexpr uint32_t	file:
 window	src/main.c	/^GLFWwindow *window = nullptr;$/;"	v	typeref:typename:GLFWwindow *
