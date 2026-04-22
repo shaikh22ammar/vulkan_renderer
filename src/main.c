@@ -55,7 +55,7 @@ static VkResult initWindow() {
  *	Global variables:
  *		enableValidationLayers
  *		validationLayers[validationLayersCount]
- *		requiredExtensions[requiredExtensionsCount]
+ *		requiredInstanceExtensions[requiredInstanceExtensionsCount]
  *		instance
  *
  *	Functions:
@@ -95,8 +95,8 @@ static VkResult checkValidationLayerSupport() {
 	return result;
 }
 
-static uint32_t requiredExtensionsCount = 0;
-static const char **requiredExtensions = nullptr;
+static uint32_t requiredInstanceExtensionsCount = 0;
+static const char **requiredInstanceExtensions = nullptr;
 static VkResult checkExtensionSupport() {
 	VkResult result = VK_SUCCESS;
 
@@ -104,16 +104,16 @@ static VkResult checkExtensionSupport() {
 	vkEnumerateInstanceExtensionProperties(nullptr, &supportedExtensionsNum, nullptr);
 	VkExtensionProperties supportedExtensions[supportedExtensionsNum];
 	vkEnumerateInstanceExtensionProperties(nullptr, &supportedExtensionsNum, supportedExtensions);
-	for (uint32_t i = 0; i < requiredExtensionsCount; i++) {
+	for (uint32_t i = 0; i < requiredInstanceExtensionsCount; i++) {
 		bool found = false;
 		for (uint32_t j = 0; j < supportedExtensionsNum; j++) {
-			if (strcmp(requiredExtensions[i], supportedExtensions[j].extensionName) == 0) {
+			if (strcmp(requiredInstanceExtensions[i], supportedExtensions[j].extensionName) == 0) {
 				found = true;
 				break;
 			}
 		}
 		if (!found) {
-			fprintf(stderr, "Required extension %s is not supported\n", requiredExtensions[i]);
+			fprintf(stderr, "Required extension %s is not supported\n", requiredInstanceExtensions[i]);
 			result = VK_ERROR_EXTENSION_NOT_PRESENT;
 		}
 	}
@@ -135,23 +135,23 @@ static VkResult createInstance() {
 	uint32_t glfwExtensionCount = 0;
 	const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-	requiredExtensionsCount = glfwExtensionCount;
+	requiredInstanceExtensionsCount = glfwExtensionCount;
 	#ifdef MAC_OS // portability extension is required for MoltenVk
-	requiredExtensionsCount++;
+	requiredInstanceExtensionsCount++;
 	#endif
-	requiredExtensions = malloc((sizeof *glfwExtensions) * requiredExtensionsCount);
-	if (requiredExtensions == nullptr) {
+	requiredInstanceExtensions = malloc((sizeof *glfwExtensions) * requiredInstanceExtensionsCount);
+	if (!requiredInstanceExtensions) {
 		fprintf(stderr, "Failed allocating memory for extensions\n");
 		result = VK_ERROR_OUT_OF_HOST_MEMORY;
 		goto failure;
 	}
 	puts("The following extensions are required:");
-	for (uint32_t i = 0; i < requiredExtensionsCount - 1; i++) {
-		requiredExtensions[i] = glfwExtensions[i];
-		printf("%s, ", requiredExtensions[i]);
+	for (uint32_t i = 0; i < requiredInstanceExtensionsCount - 1; i++) {
+		requiredInstanceExtensions[i] = glfwExtensions[i];
+		printf("%s, ", requiredInstanceExtensions[i]);
 	}
 	#ifdef MAC_OS
-	requiredExtensions[requiredExtensionsCount - 1] = VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME;
+	requiredInstanceExtensions[requiredInstanceExtensionsCount - 1] = VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME;
 	printf("%s\n", VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 	#endif
 
@@ -174,8 +174,8 @@ static VkResult createInstance() {
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pNext = nullptr;
 	createInfo.pApplicationInfo = &appInfo;
-	createInfo.enabledExtensionCount = requiredExtensionsCount;
-	createInfo.ppEnabledExtensionNames = requiredExtensions;
+	createInfo.enabledExtensionCount = requiredInstanceExtensionsCount;
+	createInfo.ppEnabledExtensionNames = requiredInstanceExtensions;
 	if (enableValidationLayers) {
 		createInfo.enabledLayerCount = validationLayersCount;
 		createInfo.ppEnabledLayerNames = validationLayers;
@@ -186,17 +186,19 @@ static VkResult createInstance() {
 	createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 	#endif
 
-	
-	if ((result = vkCreateInstance(&createInfo, nullptr, &instance)) < VK_SUCCESS) {
+	result = vkCreateInstance(&createInfo, nullptr, &instance);
+	if (result < VK_SUCCESS) {
 		fprintf(stderr, "vkCreateInstance failed with exit code: %d\n", result);
 		goto failure;
 	}
+	free(requiredInstanceExtensions);
+	requiredInstanceExtensions = nullptr;
 	return result;
 
 	failure:
-		if (requiredExtensions != nullptr) {
-			free(requiredExtensions);
-			requiredExtensions = nullptr;
+		if (requiredInstanceExtensions != nullptr) {
+			free(requiredInstanceExtensions);
+			requiredInstanceExtensions = nullptr;
 		}
 		return result;
 }
@@ -210,7 +212,7 @@ static VkResult createInstance() {
  *	Global variables:
  * 		requiredDeviceExtensions
  *		requiredDeviceExtensionsCount
- *		requiredGraphicsCommandsQueueFamilyIndex
+ *		requiredGraphicsCommandsQueueFamilyIndex[requiredDeviceExtensionsCount + 1]
  * 		physicalDevice
  *
  *	Functions:
@@ -256,6 +258,12 @@ static bool isDeviceSuitable(VkPhysicalDevice device) {
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &supportedDeviceExtensionPropertiesCount, nullptr);
 	VkExtensionProperties *supportedDeviceExtensionProperties 
 		= malloc(sizeof(VkExtensionProperties)*supportedDeviceExtensionPropertiesCount);
+	if (!supportedDeviceExtensionProperties) {
+		fprintf(stderr, 
+			"Failed allocating memory for finding supported extensions of device: %d\n",
+			deviceProperies.properties.deviceID);
+		return false;
+	}
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &supportedDeviceExtensionPropertiesCount, supportedDeviceExtensionProperties);
 	for(uint32_t i = 0; i < requiredDeviceExtensionsCount; i++) {
 		bool found = false;
@@ -281,6 +289,12 @@ static bool isDeviceSuitable(VkPhysicalDevice device) {
 	uint32_t queueFamiliesCount;
 	vkGetPhysicalDeviceQueueFamilyProperties2(device, &queueFamiliesCount, nullptr);
 	VkQueueFamilyProperties2 *queueFamiliesProperties = malloc(sizeof(VkQueueFamilyProperties2)*queueFamiliesCount);
+	if (!queueFamiliesProperties) {
+		fprintf(stderr, 
+			"Failed allocating memory for finding queue families of device: %d\n",
+			deviceProperies.properties.deviceID);
+		return false;
+	}
 	for (uint32_t i = 0; i < queueFamiliesCount; i++) {
 		queueFamiliesProperties[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2;
 		queueFamiliesProperties[i].pNext = nullptr;

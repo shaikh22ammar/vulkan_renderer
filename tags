@@ -98,13 +98,13 @@ bin	makefile	/^bin:$/;"	t
 bin/renderer	makefile	/^bin\/renderer: $(SRCS) | bin$/;"	t
 build	makefile	/^build: $(TARGET)$/;"	t
 build	makefile	/^build: CFLAGS += -O2$/;"	t
-checkExtensionSupport	src/main.c	/^static bool checkExtensionSupport() {$/;"	f	typeref:typename:bool	file:
-checkValidationLayerSupport	src/main.c	/^static bool checkValidationLayerSupport() {$/;"	f	typeref:typename:bool	file:
+checkExtensionSupport	src/main.c	/^static VkResult checkExtensionSupport() {$/;"	f	typeref:typename:VkResult	file:
+checkValidationLayerSupport	src/main.c	/^static VkResult checkValidationLayerSupport() {$/;"	f	typeref:typename:VkResult	file:
 clean	makefile	/^clean:$/;"	t
 cleanUp	src/main.c	/^static void cleanUp() {$/;"	f	typeref:typename:void	file:
 compile_commands.json	makefile	/^compile_commands.json: $(SRCS)$/;"	t
 createInstance	src/main.c	/^static VkResult createInstance() {$/;"	f	typeref:typename:VkResult	file:
-createLogicalDevice	src/main.c	/^VkResult createLogicalDevice() {$/;"	f	typeref:typename:VkResult
+createLogicalDevice	src/main.c	/^static VkResult createLogicalDevice() {$/;"	f	typeref:typename:VkResult	file:
 debug	makefile	/^debug: $(TARGET)$/;"	t
 debug	makefile	/^debug: CFLAGS += -g -O0$/;"	t
 device	src/main.c	/^VkDevice device;$/;"	v	typeref:typename:VkDevice
@@ -113,10 +113,10 @@ enableValidationLayers	src/main.c	/^constexpr bool enableValidationLayers = fals
 enableValidationLayers	src/main.c	/^constexpr bool enableValidationLayers = true;$/;"	v	typeref:typename:constexpr bool
 file	compile_commands.json	/^    "file": "src\/main.c",$/;"	s	object:0
 graphicsFamily	src/main.c	/^struct {uint32_t graphicsFamily;} requiredGraphicsCommandsQueueFamilyIndex;$/;"	m	struct:__anon6a96e1720108	typeref:typename:uint32_t	file:
-initVulkan	src/main.c	/^static bool initVulkan() {$/;"	f	typeref:typename:bool	file:
-initWindow	src/main.c	/^static bool initWindow() {$/;"	f	typeref:typename:bool	file:
+initVulkan	src/main.c	/^static VkResult initVulkan() {$/;"	f	typeref:typename:VkResult	file:
+initWindow	src/main.c	/^static VkResult initWindow() {$/;"	f	typeref:typename:VkResult	file:
 instance	src/main.c	/^VkInstance instance;$/;"	v	typeref:typename:VkInstance
-isDeviceSuitable	src/main.c	/^bool isDeviceSuitable(VkPhysicalDevice device) {$/;"	f	typeref:typename:bool
+isDeviceSuitable	src/main.c	/^static bool isDeviceSuitable(VkPhysicalDevice device) {$/;"	f	typeref:typename:bool	file:
 isPortabilitySubsetRequired	src/main.c	/^bool isPortabilitySubsetRequired = false;$/;"	v	typeref:typename:bool
 main	src/main.c	/^int main() {$/;"	f	typeref:typename:int
 main	test/test.c	/^int main() {$/;"	f	typeref:typename:int
