@@ -30,7 +30,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
 constexpr uint32_t WIDTH = 800;
 constexpr uint32_t HEIGHT = 600;
-GLFWwindow *window;
+GLFWwindow *window = nullptr;
 static VkResult initWindow() {
 	glfwInit();
 	// prevent GLFW from loading openGL
@@ -210,9 +210,8 @@ static VkResult createInstance() {
  * 	A physical device is chosen.
  *
  *	Global variables:
- * 		requiredDeviceExtensions
- *		requiredDeviceExtensionsCount
- *		requiredGraphicsCommandsQueueFamilyIndex[requiredDeviceExtensionsCount + 1]
+ *		requiredDeviceExtensions[requiredDeviceExtensionsCount + 1]
+ *		requiredQueueCommandsQueueFamilyIndex
  * 		physicalDevice
  *
  *	Functions:
@@ -226,7 +225,7 @@ const char *requiredDeviceExtensions[requiredDeviceExtensionsCount + 1] = {
 	VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
 };
 bool isPortabilitySubsetRequired = false;
-struct {uint32_t graphicsFamily;} requiredGraphicsCommandsQueueFamilyIndex;
+struct {uint32_t graphicsFamily;} requiredQueueCommandsQueueFamilyIndex;
 static bool isDeviceSuitable(VkPhysicalDevice device) {
 	// check if device supports api version 1.3 or higher
 	VkPhysicalDeviceProperties2 deviceProperies;
@@ -307,7 +306,7 @@ static bool isDeviceSuitable(VkPhysicalDevice device) {
 		*/
 		if (queueFamily.queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 			existsGraphicsFamily = true;
-			requiredGraphicsCommandsQueueFamilyIndex.graphicsFamily = i;
+			requiredQueueCommandsQueueFamilyIndex.graphicsFamily = i;
 			break;
 		}
 	}
@@ -373,7 +372,7 @@ static VkResult createLogicalDevice() {
 	VkDeviceQueueCreateInfo deviceQueueCreateInfo = {0};
 	deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 	deviceQueueCreateInfo.pNext = nullptr;
-	deviceQueueCreateInfo.queueFamilyIndex = requiredGraphicsCommandsQueueFamilyIndex.graphicsFamily;
+	deviceQueueCreateInfo.queueFamilyIndex = requiredQueueCommandsQueueFamilyIndex.graphicsFamily;
 	deviceQueueCreateInfo.queueCount = 1;
 	deviceQueueCreateInfo.pQueuePriorities = &queuePriority;
 	
@@ -411,11 +410,32 @@ static VkResult createLogicalDevice() {
 	return result;
 }
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *			QUEUE COMMANDS HANDLING
+ *
+ * 	Handles are created for required queue commands.
+ *
+ *	Global variables:
+ *		graphicsQueue
+ *
+ *	Functions:
+ *		initQueueHandles()
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
+VkQueue graphicsQueue = nullptr; 
+static VkResult initQueueHandles() {
+	VkResult result = VK_SUCCESS;
+ 	vkGetDeviceQueue(device, requiredQueueCommandsQueueFamilyIndex.graphicsFamily, 0, &graphicsQueue);
+	return result;
+}
+
 static VkResult initVulkan() {
 	VkResult result = VK_SUCCESS;
 	if ((result = createInstance()) < VK_SUCCESS) return result;
 	if ((result = pickPhysicalDevice()) < VK_SUCCESS) return result;
 	if ((result = createLogicalDevice()) < VK_SUCCESS) return result;
+	if ((result = initQueueHandles()) < VK_SUCCESS) return result;
 	return result;
 }
 

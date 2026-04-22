@@ -92,7 +92,7 @@ LDFLAGS	makefile	/^LDFLAGS = $/;"	m
 SRCS	makefile	/^SRCS = src\/main.c$/;"	m
 TARGET	makefile	/^TARGET = bin\/renderer$/;"	m
 WIDTH	src/main.c	/^constexpr uint32_t WIDTH = 800;$/;"	v	typeref:typename:constexpr uint32_t
-__anon6a96e1720108	src/main.c	/^struct {uint32_t graphicsFamily;} requiredGraphicsCommandsQueueFamilyIndex;$/;"	s	file:
+__anon6a96e1720108	src/main.c	/^struct {uint32_t graphicsFamily;} requiredQueueCommandsQueueFamilyIndex;$/;"	s	file:
 arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:0
 bin	makefile	/^bin:$/;"	t
 bin/renderer	makefile	/^bin\/renderer: $(SRCS) | bin$/;"	t
@@ -112,7 +112,9 @@ directory	compile_commands.json	/^    "directory": "\/Users\/shaikhammar\/Docume
 enableValidationLayers	src/main.c	/^constexpr bool enableValidationLayers = false;$/;"	v	typeref:typename:constexpr bool
 enableValidationLayers	src/main.c	/^constexpr bool enableValidationLayers = true;$/;"	v	typeref:typename:constexpr bool
 file	compile_commands.json	/^    "file": "src\/main.c",$/;"	s	object:0
-graphicsFamily	src/main.c	/^struct {uint32_t graphicsFamily;} requiredGraphicsCommandsQueueFamilyIndex;$/;"	m	struct:__anon6a96e1720108	typeref:typename:uint32_t	file:
+graphicsFamily	src/main.c	/^struct {uint32_t graphicsFamily;} requiredQueueCommandsQueueFamilyIndex;$/;"	m	struct:__anon6a96e1720108	typeref:typename:uint32_t	file:
+graphicsQueue	src/main.c	/^VkQueue graphicsQueue = nullptr; $/;"	v	typeref:typename:VkQueue
+initQueueHandles	src/main.c	/^static VkResult initQueueHandles() {$/;"	f	typeref:typename:VkResult	file:
 initVulkan	src/main.c	/^static VkResult initVulkan() {$/;"	f	typeref:typename:VkResult	file:
 initWindow	src/main.c	/^static VkResult initWindow() {$/;"	f	typeref:typename:VkResult	file:
 instance	src/main.c	/^VkInstance instance;$/;"	v	typeref:typename:VkInstance
@@ -126,11 +128,11 @@ physicalDevice	src/main.c	/^VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;$/;
 pickPhysicalDevice	src/main.c	/^static bool pickPhysicalDevice() {$/;"	f	typeref:typename:bool	file:
 requiredDeviceExtensions	src/main.c	/^const char *requiredDeviceExtensions[requiredDeviceExtensionsCount + 1] = {$/;"	v	typeref:typename:const char * []
 requiredDeviceExtensionsCount	src/main.c	/^constexpr uint32_t requiredDeviceExtensionsCount = 1;$/;"	v	typeref:typename:constexpr uint32_t
-requiredExtensions	src/main.c	/^static const char **requiredExtensions = nullptr;$/;"	v	typeref:typename:const char **	file:
-requiredExtensionsCount	src/main.c	/^static uint32_t requiredExtensionsCount = 0;$/;"	v	typeref:typename:uint32_t	file:
-requiredGraphicsCommandsQueueFamilyIndex	src/main.c	/^struct {uint32_t graphicsFamily;} requiredGraphicsCommandsQueueFamilyIndex;$/;"	v	typeref:struct:__anon6a96e1720108
+requiredInstanceExtensions	src/main.c	/^static const char **requiredInstanceExtensions = nullptr;$/;"	v	typeref:typename:const char **	file:
+requiredInstanceExtensionsCount	src/main.c	/^static uint32_t requiredInstanceExtensionsCount = 0;$/;"	v	typeref:typename:uint32_t	file:
+requiredQueueCommandsQueueFamilyIndex	src/main.c	/^struct {uint32_t graphicsFamily;} requiredQueueCommandsQueueFamilyIndex;$/;"	v	typeref:struct:__anon6a96e1720108
 run	makefile	/^run: $/;"	t
 run	src/main.c	/^static void run() {$/;"	f	typeref:typename:void	file:
 validationLayers	src/main.c	/^static const char *validationLayers[validationLayersCount] = {"VK_LAYER_KHRONOS_validation"};$/;"	v	typeref:typename:const char * []	file:
 validationLayersCount	src/main.c	/^static constexpr uint32_t validationLayersCount = 1;$/;"	v	typeref:typename:constexpr uint32_t	file:
-window	src/main.c	/^GLFWwindow *window;$/;"	v	typeref:typename:GLFWwindow *
+window	src/main.c	/^GLFWwindow *window = nullptr;$/;"	v	typeref:typename:GLFWwindow *
