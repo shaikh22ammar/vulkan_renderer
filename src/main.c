@@ -11,18 +11,15 @@
 #include <vulkan/vulkan_beta.h>
 #endif
 
-
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 GLFWwindow *window = nullptr;
-extern VkResult initWindow();
 
 VkInstance instance = nullptr;
+VkSurfaceKHR surface = nullptr;
 VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 VkDevice device = nullptr;
-VkQueue graphicsQueue = nullptr; 
-extern VkResult initVulkan();
-
+VkQueue queue = nullptr; 
 
 static void mainLoop() {
 	while(!glfwWindowShouldClose(window)) {
@@ -32,11 +29,14 @@ static void mainLoop() {
 
 static void cleanUp() {
 	if (device) vkDestroyDevice(device, nullptr);
+	if (surface) vkDestroySurfaceKHR(instance, surface, nullptr);
 	if (instance) vkDestroyInstance(instance, nullptr);
 	if (window) glfwDestroyWindow(window);
 	glfwTerminate();
 }
 
+extern VkResult initWindow();
+extern VkResult initVulkan();
 static void run() {
 	if (initWindow() < VK_SUCCESS) goto cleanup;
 	if (initVulkan() < VK_SUCCESS) goto cleanup;

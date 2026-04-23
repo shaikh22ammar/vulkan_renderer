@@ -6,9 +6,10 @@
  *
  * 		The following external variables are initialized here:
  * 			instance
+ * 			surface
  * 			physicalDevice
  * 			device
- * 			graphicsQueue
+ * 			queue
  *
  * 		when main calls the external function initVulkan() defined here.
  *
@@ -47,9 +48,9 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
 
 #ifdef NDEBUG
-constexpr bool enableValidationLayers = false;
+constexpr VkBool32 enableValidationLayers = VK_FALSE;
 #else
-constexpr bool enableValidationLayers = true;
+constexpr VkBool32 enableValidationLayers = VK_TRUE;
 #endif
 static constexpr uint32_t validationLayersCount = 1;
 static const char *validationLayers[validationLayersCount] = {"VK_LAYER_KHRONOS_validation"};
@@ -62,10 +63,10 @@ static VkResult checkValidationLayerSupport() {
 	vkEnumerateInstanceLayerProperties(&supportedLayersNum, supportedLayers);
 
 	for (uint32_t i = 0; i < validationLayersCount; i++) {
-		bool found = false;
+		VkBool32 found = VK_FALSE;
 		for (uint32_t j = 0; j < supportedLayersNum; j++) {
 			if (strcmp(validationLayers[i], supportedLayers[j].layerName) == 0) {
-				found = true;
+				found = VK_TRUE;
 				break;
 			}
 		}
@@ -88,10 +89,10 @@ static VkResult checkExtensionSupport() {
 	VkExtensionProperties supportedExtensions[supportedExtensionsNum];
 	vkEnumerateInstanceExtensionProperties(nullptr, &supportedExtensionsNum, supportedExtensions);
 	for (uint32_t i = 0; i < requiredInstanceExtensionsCount; i++) {
-		bool found = false;
+		VkBool32 found = VK_FALSE;
 		for (uint32_t j = 0; j < supportedExtensionsNum; j++) {
 			if (strcmp(requiredInstanceExtensions[i], supportedExtensions[j].extensionName) == 0) {
-				found = true;
+				found = VK_TRUE;
 				break;
 			}
 		}
@@ -188,13 +189,37 @@ failure:
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
+ *			SURFACE CREATION
+ *
+ *		A vulkan surface is created
+ *
+ *		Global variables:
+ *			window (extern)
+ *			surface (extern)
+ *
+ *		Functions:
+ *			createSurface()
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
+extern GLFWwindow *window;
+extern VkSurfaceKHR surface;
+static VkResult createSurface() {
+	VkResult result;
+	if ((result = glfwCreateWindowSurface(instance, window, nullptr, &surface)) < VK_SUCCESS) {
+		fprintf(stderr, "glfwCreateWindowSurface exited with error code %d", result);
+	}
+	return result;
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
  *			PHYSICAL DEVICE CHOICE
  *
  * 	A physical device is chosen.
  *
  *	Global variables:
  *		requiredDeviceExtensions[requiredDeviceExtensionsCount + 1]
- *		requiredQueueCommandsQueueFamilyIndex
+ *		//requiredQueueCommandsQueueFamilyIndex
  * 		physicalDevice (extern)
  *
  *	Functions:
@@ -208,15 +233,15 @@ static const char *requiredDeviceExtensions[requiredDeviceExtensionsCount + 1] =
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME, 
 	VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
 };
-static bool isPortabilitySubsetRequired = false;
-static struct {uint32_t graphicsFamily;} requiredQueueCommandsQueueFamilyIndex;
-static bool isDeviceSuitable(VkPhysicalDevice device) {
+static VkBool32 isPortabilitySubsetRequired = VK_FALSE;
+//static struct {uint32_t graphicsFamily; uint32_t presentFamily;} requiredQueueCommandsQueueFamilyIndex;
+static VkBool32 isDeviceSuitable(VkPhysicalDevice currPhysicalDevice) {
 	// check if device supports api version 1.3 or higher
 	VkPhysicalDeviceProperties2 deviceProperies;
 	deviceProperies.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 	deviceProperies.pNext = nullptr;
-	vkGetPhysicalDeviceProperties2(device, &deviceProperies);
-	bool isApiVersionSupported = deviceProperies.properties.apiVersion >= VK_API_VERSION_1_3;
+	vkGetPhysicalDeviceProperties2(currPhysicalDevice, &deviceProperies);
+	VkBool32 isApiVersionSupported = deviceProperies.properties.apiVersion >= VK_API_VERSION_1_3;
 
 	// check if dynamic rendering and extended dynamic state features are supported
 	VkPhysicalDeviceExtendedDynamicStateFeaturesEXT deviceVulkanExtendedDynamicStateFeaturesEXT;
@@ -231,109 +256,117 @@ static bool isDeviceSuitable(VkPhysicalDevice device) {
 	deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	deviceFeatures.pNext = &deviceVulkan13Features;
 
-	vkGetPhysicalDeviceFeatures2(device, &deviceFeatures);
-	bool isAllFeaturesSupported = deviceVulkan13Features.dynamicRendering 
+	vkGetPhysicalDeviceFeatures2(currPhysicalDevice, &deviceFeatures);
+	VkBool32 isAllFeaturesSupported = deviceVulkan13Features.dynamicRendering 
 		&& deviceVulkanExtendedDynamicStateFeaturesEXT.extendedDynamicState;
 
 	// check if requireds extensions are supported
-	bool isAllDeviceExtensionsSupported = true;
+	VkBool32 isAllDeviceExtensionsSupported = VK_TRUE;
 	uint32_t supportedDeviceExtensionPropertiesCount;
-	vkEnumerateDeviceExtensionProperties(device, nullptr, &supportedDeviceExtensionPropertiesCount, nullptr);
+	vkEnumerateDeviceExtensionProperties(currPhysicalDevice, nullptr, &supportedDeviceExtensionPropertiesCount, nullptr);
 	VkExtensionProperties *supportedDeviceExtensionProperties 
 		= malloc(sizeof(VkExtensionProperties)*supportedDeviceExtensionPropertiesCount);
 	if (!supportedDeviceExtensionProperties) {
 		fprintf(stderr, 
 			"Failed allocating memory for finding supported extensions of device: %d\n",
 			deviceProperies.properties.deviceID);
-		return false;
+		return VK_FALSE;
 	}
-	vkEnumerateDeviceExtensionProperties(device, nullptr, &supportedDeviceExtensionPropertiesCount, supportedDeviceExtensionProperties);
+	vkEnumerateDeviceExtensionProperties(
+			currPhysicalDevice, 
+			nullptr, 
+			&supportedDeviceExtensionPropertiesCount, 
+			supportedDeviceExtensionProperties
+			);
 	for(uint32_t i = 0; i < requiredDeviceExtensionsCount; i++) {
-		bool found = false;
+		VkBool32 found = VK_FALSE;
 		for (uint32_t j = 0; j < supportedDeviceExtensionPropertiesCount; j++) {
 			if (!strcmp(requiredDeviceExtensions[i], supportedDeviceExtensionProperties[j].extensionName)) {
-				found = true;
+				found = VK_TRUE;
 				break;
 			}
 			if (!strcmp(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME, supportedDeviceExtensionProperties[j].extensionName)) {
-				isPortabilitySubsetRequired = true;
+				isPortabilitySubsetRequired = VK_TRUE;
 			} 
 		}
 		if (!found) {
-			isAllDeviceExtensionsSupported = false;
+			isAllDeviceExtensionsSupported = VK_FALSE;
 			break;
 		}
 	}
 	free(supportedDeviceExtensionProperties);
 	supportedDeviceExtensionProperties = nullptr;
 
-	// check if there is queue family supporting graphics commands
-	bool existsGraphicsFamily = false;
+	// check if there is queue family has the required queue commands: graphics and present
+	VkBool32 isAllQueueCommandsSupported = VK_FALSE;
 	uint32_t queueFamiliesCount;
-	vkGetPhysicalDeviceQueueFamilyProperties2(device, &queueFamiliesCount, nullptr);
+	vkGetPhysicalDeviceQueueFamilyProperties2(currPhysicalDevice, &queueFamiliesCount, nullptr);
 	VkQueueFamilyProperties2 *queueFamiliesProperties = malloc(sizeof(VkQueueFamilyProperties2)*queueFamiliesCount);
 	if (!queueFamiliesProperties) {
 		fprintf(stderr, 
 			"Failed allocating memory for finding queue families of device: %d\n",
 			deviceProperies.properties.deviceID);
-		return false;
+		return VK_FALSE;
 	}
 	for (uint32_t i = 0; i < queueFamiliesCount; i++) {
 		queueFamiliesProperties[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2;
 		queueFamiliesProperties[i].pNext = nullptr;
 	}
-	vkGetPhysicalDeviceQueueFamilyProperties2(device, &queueFamiliesCount, queueFamiliesProperties);
+	vkGetPhysicalDeviceQueueFamilyProperties2(currPhysicalDevice, &queueFamiliesCount, queueFamiliesProperties);
 	for (uint32_t i = 0; i < queueFamiliesCount; i++) {
 		VkQueueFamilyProperties2 queueFamily = queueFamiliesProperties[i];
-		/*printf("Queue index: %u, queue flags: %B, queueCount: %d\n", 
-				i, queueFamily.queueFamilyProperties.queueFlags, queueFamily.queueFamilyProperties.queueCount);
-		*/
+		VkBool32 existsGraphicsFamily = VK_FALSE;
+		VkBool32 existsPresentFamily = VK_FALSE;
 		if (queueFamily.queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-			existsGraphicsFamily = true;
-			requiredQueueCommandsQueueFamilyIndex.graphicsFamily = i;
-			break;
+			existsGraphicsFamily = VK_TRUE;
 		}
+		VkResult result = VK_SUCCESS;
+		if ((result = vkGetPhysicalDeviceSurfaceSupportKHR(currPhysicalDevice, i, surface, &existsPresentFamily)) < VK_SUCCESS) {
+			fprintf(stderr, "vkGetPhysicalDeviceSurfaceSupportKHR failed with error code: %d\n", result);	
+			return VK_FALSE;
+		}
+		isAllQueueCommandsSupported = existsGraphicsFamily && existsPresentFamily;
 	}
 	free(queueFamiliesProperties);
 	queueFamiliesProperties = nullptr;
 
-	return isApiVersionSupported && existsGraphicsFamily && isAllFeaturesSupported && isAllDeviceExtensionsSupported;
+	return isApiVersionSupported && isAllQueueCommandsSupported && isAllFeaturesSupported && isAllDeviceExtensionsSupported;
 }
 
 extern VkPhysicalDevice physicalDevice;
-static bool pickPhysicalDevice() {
+static VkBool32 pickPhysicalDevice() {
 	uint32_t physicalDevicesCount = 0;
 	vkEnumeratePhysicalDevices(instance, &physicalDevicesCount, nullptr);
 	if (physicalDevicesCount == 0) {
 		fprintf(stderr, "Unable to find any GPU with Vulkan support\n");
-		return false;
+		return VK_FALSE;
 	}
 	VkPhysicalDevice availablePhysicalDevices[physicalDevicesCount];
 	vkEnumeratePhysicalDevices(instance, &physicalDevicesCount, availablePhysicalDevices);
 
 	puts("Found devices:");
 	for (uint32_t i = 0; i < physicalDevicesCount; i++) {
-		VkPhysicalDevice device = availablePhysicalDevices[i];
-		VkPhysicalDeviceProperties2 deviceProperies;
-		deviceProperies.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-		deviceProperies.pNext = nullptr;
-		vkGetPhysicalDeviceProperties2(device, &deviceProperies);
-		printf("%d: %s\n", deviceProperies.properties.deviceID, deviceProperies.properties.deviceName);		
-		if (isDeviceSuitable(device) && physicalDevice == VK_NULL_HANDLE) {
-			physicalDevice = device;
+		VkPhysicalDevice currPhysicalDevice = availablePhysicalDevices[i];
+		VkPhysicalDeviceProperties2 currPhysicalDeviceProperies;
+		currPhysicalDeviceProperies.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+		currPhysicalDeviceProperies.pNext = nullptr;
+		vkGetPhysicalDeviceProperties2(currPhysicalDevice, &currPhysicalDeviceProperies);
+		printf("%d: %s\n", currPhysicalDeviceProperies.properties.deviceID, currPhysicalDeviceProperies.properties.deviceName);		
+		if (isDeviceSuitable(currPhysicalDevice) && physicalDevice == VK_NULL_HANDLE) {
+			physicalDevice = currPhysicalDevice;
 		}
 	}
 	if (physicalDevice == VK_NULL_HANDLE) {
 		fprintf(stderr, "Unable to find any suitable GPU");
-		return false;
+		return VK_FALSE;
 	}
-	VkPhysicalDeviceProperties2 deviceProperies;
-	deviceProperies.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-	deviceProperies.pNext = nullptr;
-	vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperies);
-	printf("Picked device %d: %s\n", deviceProperies.properties.deviceID, deviceProperies.properties.deviceName);
+	VkPhysicalDeviceProperties2 chosenDeviceProperies;
+	chosenDeviceProperies.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+	chosenDeviceProperies.pNext = nullptr;
+	vkGetPhysicalDeviceProperties2(physicalDevice, &chosenDeviceProperies);
+	printf("Picked device %d: %s\n", chosenDeviceProperies.properties.deviceID, chosenDeviceProperies.properties.deviceName);
 	puts("");
-	return true;
+	return VK_TRUE;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -344,6 +377,7 @@ static bool pickPhysicalDevice() {
  *
  *	Global variables:
  *		device (extern)
+ *		queue (extern)
  *
  *	Functions:
  *		createLogicalDevice()
@@ -351,13 +385,61 @@ static bool pickPhysicalDevice() {
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
 extern VkDevice device;
+extern VkQueue queue; 
 static VkResult createLogicalDevice() {
+	VkResult result = VK_SUCCESS;
+
+	// Finding the queueFamilyIndex that supports graphics and presentation commands simultanteously
+	VkPhysicalDeviceProperties2 deviceProperies;
+	deviceProperies.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+	deviceProperies.pNext = nullptr;
+	vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperies);
+
+	uint32_t queueFamilyIndex = ~0U;
+	VkBool32 queueFamilyFound = VK_FALSE;
+	uint32_t queueFamiliesCount;
+	vkGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, &queueFamiliesCount, nullptr);
+	VkQueueFamilyProperties2 *queueFamiliesProperties = malloc(sizeof(VkQueueFamilyProperties2)*queueFamiliesCount);
+	if (!queueFamiliesProperties) {
+		fprintf(stderr, 
+			"Failed allocating memory for finding queue families of device: %d\n",
+			deviceProperies.properties.deviceID);
+		return VK_FALSE;
+	}
+	for (uint32_t i = 0; i < queueFamiliesCount; i++) {
+		queueFamiliesProperties[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2;
+		queueFamiliesProperties[i].pNext = nullptr;
+	}
+
+	vkGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, &queueFamiliesCount, queueFamiliesProperties);
+	for (uint32_t i = 0; i < queueFamiliesCount; i++) {
+		VkQueueFamilyProperties2 queueFamily = queueFamiliesProperties[i];
+		VkBool32 existsGraphicsCommand = VK_FALSE;
+		VkBool32 existsPresentCommand = VK_FALSE;
+		if (queueFamily.queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+			existsGraphicsCommand = VK_TRUE;
+		}
+		vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &existsPresentCommand);
+		if (existsGraphicsCommand && existsPresentCommand) {
+			queueFamilyIndex = i;
+			queueFamilyFound = VK_TRUE;
+		}
+	}
+	free(queueFamiliesProperties);
+	queueFamiliesProperties = nullptr;
+
+	if (!queueFamilyFound) {
+		result = VK_ERROR_INITIALIZATION_FAILED;
+		fprintf(stderr, "No queue family found that supports both graphics and present commands.\n");
+		return result;
+	}
+
 	// Specifying queues
 	float queuePriority = 0.5f;
 	VkDeviceQueueCreateInfo deviceQueueCreateInfo = {0};
 	deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 	deviceQueueCreateInfo.pNext = nullptr;
-	deviceQueueCreateInfo.queueFamilyIndex = requiredQueueCommandsQueueFamilyIndex.graphicsFamily;
+	deviceQueueCreateInfo.queueFamilyIndex = queueFamilyIndex;
 	deviceQueueCreateInfo.queueCount = 1;
 	deviceQueueCreateInfo.pQueuePriorities = &queuePriority;
 	
@@ -385,34 +467,12 @@ static VkResult createLogicalDevice() {
 	deviceCreateInfo.enabledExtensionCount = requiredDeviceExtensionsCount + isPortabilitySubsetRequired;
 	deviceCreateInfo.ppEnabledExtensionNames = requiredDeviceExtensions;
 
-	VkResult result = VK_SUCCESS;
-
 	if ((result = vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device)) < VK_SUCCESS) {
 		fprintf(stderr, "vkCreateDevice failed with exit code: %d\n", result);
 		return result;
 	}
 
-	return result;
-}
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *
- *			QUEUE COMMANDS HANDLING
- *
- * 	Handles are created for required queue commands.
- *
- *	Global variables:
- *		graphicsQueue (extern)
- *
- *	Functions:
- *		initQueueHandles()
- *
- *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
-extern VkQueue graphicsQueue; 
-static VkResult initQueueHandles() {
-	VkResult result = VK_SUCCESS;
- 	vkGetDeviceQueue(device, requiredQueueCommandsQueueFamilyIndex.graphicsFamily, 0, &graphicsQueue);
+ 	vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue);
 	return result;
 }
 
@@ -425,8 +485,8 @@ static VkResult initQueueHandles() {
 VkResult initVulkan() {
 	VkResult result = VK_SUCCESS;
 	if ((result = createInstance()) < VK_SUCCESS) return result;
+	if ((result = createSurface()) < VK_SUCCESS) return result;
 	if ((result = pickPhysicalDevice()) < VK_SUCCESS) return result;
 	if ((result = createLogicalDevice()) < VK_SUCCESS) return result;
-	if ((result = initQueueHandles()) < VK_SUCCESS) return result;
 	return result;
 }
