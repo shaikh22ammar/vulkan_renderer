@@ -21,6 +21,9 @@ VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 VkDevice device = nullptr;
 VkQueue queue = nullptr; 
 VkSwapchainKHR swapChain = nullptr;
+VkImage *swapChainImages = nullptr;
+VkSurfaceFormatKHR swapChainSurfaceFormat = {0};
+VkExtent2D swapChainExtent = {0};
 
 static void mainLoop() {
 	while(!glfwWindowShouldClose(window)) {

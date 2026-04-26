@@ -71,7 +71,7 @@ static VkResult checkValidationLayerSupport() {
 			}
 		}
 		if (!found) {
-			fprintf(stderr, "Validation layer %s is not supported\n", validationLayers[i]);
+			fprintf(stderr, "ERROR: Validation layer %s is not supported\n", validationLayers[i]);
 			result = VK_ERROR_LAYER_NOT_PRESENT;
 		}
 	}
@@ -97,7 +97,7 @@ static VkResult checkExtensionSupport() {
 			}
 		}
 		if (!found) {
-			fprintf(stderr, "Required extension %s is not supported\n", requiredInstanceExtensions[i]);
+			fprintf(stderr, "ERROR: Required extension %s is not supported\n", requiredInstanceExtensions[i]);
 			result = VK_ERROR_EXTENSION_NOT_PRESENT;
 		}
 	}
@@ -125,7 +125,7 @@ static VkResult createInstance() {
 	#endif
 	requiredInstanceExtensions = malloc((sizeof *glfwExtensions) * requiredInstanceExtensionsCount);
 	if (!requiredInstanceExtensions) {
-		fprintf(stderr, "Failed allocating memory for extensions\n");
+		fprintf(stderr, "ERROR: Failed allocating memory for GLFW extensions\n");
 		result = VK_ERROR_OUT_OF_HOST_MEMORY;
 		goto failure;
 	}
@@ -172,7 +172,7 @@ static VkResult createInstance() {
 
 	result = vkCreateInstance(&createInfo, nullptr, &instance);
 	if (result < VK_SUCCESS) {
-		fprintf(stderr, "vkCreateInstance failed with exit code: %d\n", result);
+		fprintf(stderr, "ERROR: vkCreateInstance failed with exit code: %d\n", result);
 		goto failure;
 	}
 	free(requiredInstanceExtensions);
@@ -206,7 +206,7 @@ extern VkSurfaceKHR surface;
 static VkResult createSurface() {
 	VkResult result;
 	if ((result = glfwCreateWindowSurface(instance, window, nullptr, &surface)) < VK_SUCCESS) {
-		fprintf(stderr, "glfwCreateWindowSurface exited with error code %d", result);
+		fprintf(stderr, "ERROR: glfwCreateWindowSurface exited with error code %d", result);
 	}
 	return result;
 }
@@ -269,7 +269,7 @@ static VkBool32 isDeviceSuitable(VkPhysicalDevice currPhysicalDevice) {
 		= malloc(sizeof(VkExtensionProperties)*supportedDeviceExtensionPropertiesCount);
 	if (!supportedDeviceExtensionProperties) {
 		fprintf(stderr, 
-			"Failed allocating memory for finding supported extensions of device: %d\n",
+			"ERROR: Failed allocating memory for finding supported extensions of device: %d\n",
 			deviceProperies.properties.deviceID);
 		return VK_FALSE;
 	}
@@ -306,7 +306,7 @@ static VkBool32 isDeviceSuitable(VkPhysicalDevice currPhysicalDevice) {
 	VkQueueFamilyProperties2 *queueFamiliesProperties = malloc(sizeof(VkQueueFamilyProperties2)*queueFamiliesCount);
 	if (!queueFamiliesProperties) {
 		fprintf(stderr, 
-			"Failed allocating memory for finding queue families of device: %d\n",
+			"ERROR: Failed allocating memory for finding queue families of device: %d\n",
 			deviceProperies.properties.deviceID);
 		return VK_FALSE;
 	}
@@ -324,7 +324,7 @@ static VkBool32 isDeviceSuitable(VkPhysicalDevice currPhysicalDevice) {
 		}
 		VkResult result = VK_SUCCESS;
 		if ((result = vkGetPhysicalDeviceSurfaceSupportKHR(currPhysicalDevice, i, surface, &existsPresentFamily)) < VK_SUCCESS) {
-			fprintf(stderr, "vkGetPhysicalDeviceSurfaceSupportKHR failed with error code: %d\n", result);	
+			fprintf(stderr, "ERROR: vkGetPhysicalDeviceSurfaceSupportKHR failed with error code: %d\n", result);	
 			return VK_FALSE;
 		}
 		isAllQueueCommandsSupported = existsGraphicsFamily && existsPresentFamily;
@@ -340,7 +340,7 @@ static VkBool32 pickPhysicalDevice() {
 	uint32_t physicalDevicesCount = 0;
 	vkEnumeratePhysicalDevices(instance, &physicalDevicesCount, nullptr);
 	if (physicalDevicesCount == 0) {
-		fprintf(stderr, "Unable to find any GPU with Vulkan support\n");
+		fprintf(stderr, "ERROR: Unable to find any GPU with Vulkan support\n");
 		return VK_FALSE;
 	}
 	VkPhysicalDevice availablePhysicalDevices[physicalDevicesCount];
@@ -359,7 +359,7 @@ static VkBool32 pickPhysicalDevice() {
 		}
 	}
 	if (physicalDevice == VK_NULL_HANDLE) {
-		fprintf(stderr, "Unable to find any suitable GPU");
+		fprintf(stderr, "ERROR: Unable to find any suitable GPU");
 		return VK_FALSE;
 	}
 	VkPhysicalDeviceProperties2 chosenDeviceProperies;
@@ -404,7 +404,7 @@ static VkResult createLogicalDevice() {
 	VkQueueFamilyProperties2 *queueFamiliesProperties = malloc(sizeof(VkQueueFamilyProperties2)*queueFamiliesCount);
 	if (!queueFamiliesProperties) {
 		fprintf(stderr, 
-			"Failed allocating memory for finding queue families of device: %d\n",
+			"ERROR: Failed allocating memory for finding queue families of device: %d\n",
 			deviceProperies.properties.deviceID);
 		return VK_FALSE;
 	}
@@ -432,7 +432,7 @@ static VkResult createLogicalDevice() {
 
 	if (!queueFamilyFound) {
 		result = VK_ERROR_INITIALIZATION_FAILED;
-		fprintf(stderr, "No queue family found that supports both graphics and present commands.\n");
+		fprintf(stderr, "ERROR: No queue family found that supports both graphics and present commands.\n");
 		return result;
 	}
 
@@ -470,7 +470,7 @@ static VkResult createLogicalDevice() {
 	deviceCreateInfo.ppEnabledExtensionNames = requiredDeviceExtensions;
 
 	if ((result = vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device)) < VK_SUCCESS) {
-		fprintf(stderr, "vkCreateDevice failed with exit code: %d\n", result);
+		fprintf(stderr, "ERROR: vkCreateDevice failed with exit code: %d\n", result);
 		return result;
 	}
 
@@ -488,6 +488,9 @@ static VkResult createLogicalDevice() {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
 
 extern VkSwapchainKHR swapChain;
+extern VkImage *swapChainImages;
+extern VkSurfaceFormatKHR swapChainSurfaceFormat;
+extern VkExtent2D swapChainExtent;
 VkResult createSwapChain() {
 	// Choosing surface format
 	VkResult result = VK_SUCCESS;
@@ -495,11 +498,11 @@ VkResult createSwapChain() {
 	vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatsCount, nullptr);
 	VkSurfaceFormatKHR *surfaceFormats = malloc(sizeof(VkSurfaceFormatKHR)*surfaceFormatsCount);
 	if (!surfaceFormats) {
-		fprintf(stderr, "Could not allocate memory for querying surface format\n");
+		fprintf(stderr, "ERROR: Failed allocating memory for querying surface format\n");
 		return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 	}
 	if((result = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatsCount, surfaceFormats)) < VK_SUCCESS) {
-		fprintf(stderr, "vkGetPhysicalDeviceSurfaceFormatsKHR exited with error code %d\n", result);
+		fprintf(stderr, "ERROR: vkGetPhysicalDeviceSurfaceFormatsKHR exited with error code %d\n", result);
 		return result;
 	}
 	VkSurfaceFormatKHR surfaceFormat = surfaceFormats[0];
@@ -517,11 +520,11 @@ VkResult createSwapChain() {
 	vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModesCount, nullptr);
 	VkPresentModeKHR *presentModes = malloc(sizeof(VkPresentModeKHR)*presentModesCount);
 	if (!presentModes) {
-		fprintf(stderr, "Could not allocate memory for querying present modes\n");
+		fprintf(stderr, "ERROR: Failed allocating memory for querying present modes\n");
 		return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 	}
 	if ((result = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModesCount, presentModes)) < VK_SUCCESS) {
-		fprintf(stderr, "vkGetPhysicalDeviceSurfacePresentModesKHR exited with error code %d\n", result);
+		fprintf(stderr, "ERROR: vkGetPhysicalDeviceSurfacePresentModesKHR exited with error code %d\n", result);
 		return result;
 	}
 	VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
@@ -538,7 +541,7 @@ VkResult createSwapChain() {
 	VkSurfaceCapabilitiesKHR surfaceCapabilities;
 	VkExtent2D surfaceExtent = surfaceCapabilities.currentExtent;
 	if ((result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCapabilities)) < VK_SUCCESS) {
-		fprintf(stderr, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR exited with error code %d\n", result);
+		fprintf(stderr, "ERROR: vkGetPhysicalDeviceSurfaceCapabilitiesKHR exited with error code %d\n", result);
 		return result;
 	}
 	if (surfaceCapabilities.currentExtent.width < ~0U && surfaceCapabilities.currentExtent.width > 0U) {
@@ -575,10 +578,24 @@ VkResult createSwapChain() {
 	swapChainCreateInfo.clipped = VK_TRUE;
 	swapChainCreateInfo.oldSwapchain = nullptr;
 
-	if ((result  = vkCreateSwapchainKHR(device, &swapChainCreateInfo, nullptr, &swapChain)) < VK_SUCCESS) {
-		fprintf(stderr, "vkCreateSwapchainKHR exited with error code %d\n", result);
+	if ((result = vkCreateSwapchainKHR(device, &swapChainCreateInfo, nullptr, &swapChain)) < VK_SUCCESS) {
+		fprintf(stderr, "ERROR: vkCreateSwapchainKHR exited with error code %d\n", result);
 		return result;
 	}
+
+	uint32_t swapChainImagesCount;
+	vkGetSwapchainImagesKHR(device, swapChain, &swapChainImagesCount, nullptr);
+	swapChainImages = malloc(sizeof(VkImage)*swapChainImagesCount);
+	if (!swapChainImages) {
+		fprintf(stderr, "ERROR: Failed allocating memory for swap chain images.\n");
+		return VK_ERROR_OUT_OF_HOST_MEMORY;
+	}
+	if ((result = vkGetSwapchainImagesKHR(device, swapChain, &swapChainImagesCount, swapChainImages)) < VK_SUCCESS) {
+		fprintf(stderr, "ERROR: vkGetSwapchainImagesKHR exited with error code %d\n", result);
+		return result;
+	}
+	swapChainSurfaceFormat = surfaceFormat;
+	swapChainExtent = surfaceExtent;
 
 	return result;
 }
