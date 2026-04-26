@@ -228,8 +228,9 @@ static VkResult createSurface() {
  *
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
-constexpr uint32_t requiredDeviceExtensionsCount = 1;
-static const char *requiredDeviceExtensions[requiredDeviceExtensionsCount + 1] = {
+static constexpr uint32_t __requiredDeviceExtensionsCount = 1;
+static uint32_t requiredDeviceExtensionsCount = __requiredDeviceExtensionsCount;
+static const char *requiredDeviceExtensions[__requiredDeviceExtensionsCount + 1] = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME, 
 	VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
 };
@@ -278,7 +279,7 @@ static VkBool32 isDeviceSuitable(VkPhysicalDevice currPhysicalDevice) {
 			&supportedDeviceExtensionPropertiesCount, 
 			supportedDeviceExtensionProperties
 			);
-	for(uint32_t i = 0; i < requiredDeviceExtensionsCount; i++) {
+	for(uint32_t i = 0; i < __requiredDeviceExtensionsCount; i++) {
 		VkBool32 found = VK_FALSE;
 		for (uint32_t j = 0; j < supportedDeviceExtensionPropertiesCount; j++) {
 			if (!strcmp(requiredDeviceExtensions[i], supportedDeviceExtensionProperties[j].extensionName)) {
@@ -287,6 +288,7 @@ static VkBool32 isDeviceSuitable(VkPhysicalDevice currPhysicalDevice) {
 			}
 			if (!strcmp(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME, supportedDeviceExtensionProperties[j].extensionName)) {
 				isPortabilitySubsetRequired = VK_TRUE;
+				requiredDeviceExtensionsCount++;
 			} 
 		}
 		if (!found) {
@@ -464,7 +466,7 @@ static VkResult createLogicalDevice() {
 	deviceCreateInfo.pNext = &deviceFeatures;
 	deviceCreateInfo.queueCreateInfoCount = 1;
 	deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
-	deviceCreateInfo.enabledExtensionCount = requiredDeviceExtensionsCount + isPortabilitySubsetRequired;
+	deviceCreateInfo.enabledExtensionCount = requiredDeviceExtensionsCount;
 	deviceCreateInfo.ppEnabledExtensionNames = requiredDeviceExtensions;
 
 	if ((result = vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device)) < VK_SUCCESS) {
@@ -473,6 +475,111 @@ static VkResult createLogicalDevice() {
 	}
 
  	vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue);
+	return result;
+}
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *			SWAP CHAIN CREATION
+ *
+ *
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
+
+extern VkSwapchainKHR swapChain;
+VkResult createSwapChain() {
+	// Choosing surface format
+	VkResult result = VK_SUCCESS;
+	uint32_t surfaceFormatsCount;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatsCount, nullptr);
+	VkSurfaceFormatKHR *surfaceFormats = malloc(sizeof(VkSurfaceFormatKHR)*surfaceFormatsCount);
+	if (!surfaceFormats) {
+		fprintf(stderr, "Could not allocate memory for querying surface format\n");
+		return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+	}
+	if((result = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatsCount, surfaceFormats)) < VK_SUCCESS) {
+		fprintf(stderr, "vkGetPhysicalDeviceSurfaceFormatsKHR exited with error code %d\n", result);
+		return result;
+	}
+	VkSurfaceFormatKHR surfaceFormat = surfaceFormats[0];
+	for (uint32_t i = 0; i < surfaceFormatsCount; i++) {
+		if (surfaceFormats[i].format == VK_FORMAT_B8G8R8_SRGB && surfaceFormats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+			surfaceFormat = surfaceFormats[i];
+			break;
+		}
+	}
+	free(surfaceFormats);
+	surfaceFormats = nullptr;
+
+	// Choosing present modes
+	uint32_t presentModesCount;
+	vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModesCount, nullptr);
+	VkPresentModeKHR *presentModes = malloc(sizeof(VkPresentModeKHR)*presentModesCount);
+	if (!presentModes) {
+		fprintf(stderr, "Could not allocate memory for querying present modes\n");
+		return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+	}
+	if ((result = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModesCount, presentModes)) < VK_SUCCESS) {
+		fprintf(stderr, "vkGetPhysicalDeviceSurfacePresentModesKHR exited with error code %d\n", result);
+		return result;
+	}
+	VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
+	for (uint32_t i = 0; i < presentModesCount; i++) {
+		if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+			presentMode = presentModes[i];
+			break;
+		}
+	}
+	free(presentModes);
+	presentModes = nullptr;
+
+	// Choosing swap extent
+	VkSurfaceCapabilitiesKHR surfaceCapabilities;
+	VkExtent2D surfaceExtent = surfaceCapabilities.currentExtent;
+	if ((result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCapabilities)) < VK_SUCCESS) {
+		fprintf(stderr, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR exited with error code %d\n", result);
+		return result;
+	}
+	if (surfaceCapabilities.currentExtent.width < ~0U && surfaceCapabilities.currentExtent.width > 0U) {
+		int windowWidth, windowHeight;
+		glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
+		uint32_t w = surfaceCapabilities.currentExtent.width;
+		w = w > surfaceCapabilities.maxImageExtent.width ? surfaceCapabilities.maxImageExtent.width : w;
+		w = w < surfaceCapabilities.minImageExtent.width ? surfaceCapabilities.minImageExtent.width : w;
+		surfaceExtent.width = w;
+		uint32_t h = surfaceCapabilities.currentExtent.height;
+		h = h > surfaceCapabilities.maxImageExtent.height ? surfaceCapabilities.maxImageExtent.height : h;
+		h = h < surfaceCapabilities.minImageExtent.height ? surfaceCapabilities.minImageExtent.height : h;
+		surfaceExtent.height = h;
+	}
+	uint32_t minImageCount = surfaceCapabilities.minImageCount < 3U ? surfaceCapabilities.minImageCount : 3U;
+	if (0 < surfaceCapabilities.maxImageCount && surfaceCapabilities.maxImageCount < 3U)
+		minImageCount = surfaceCapabilities.maxImageCount;
+
+	// Creating the swap chain
+	VkSwapchainCreateInfoKHR swapChainCreateInfo = {0};
+	swapChainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	swapChainCreateInfo.pNext = nullptr;
+	swapChainCreateInfo.surface = surface;
+	swapChainCreateInfo.minImageCount = minImageCount;
+	swapChainCreateInfo.imageFormat = surfaceFormat.format;
+	swapChainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
+	swapChainCreateInfo.imageExtent = surfaceExtent;
+	swapChainCreateInfo.imageArrayLayers = 1U;
+	swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	swapChainCreateInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+	swapChainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	swapChainCreateInfo.presentMode = presentMode;
+	swapChainCreateInfo.clipped = VK_TRUE;
+	swapChainCreateInfo.oldSwapchain = nullptr;
+
+	if ((result  = vkCreateSwapchainKHR(device, &swapChainCreateInfo, nullptr, &swapChain)) < VK_SUCCESS) {
+		fprintf(stderr, "vkCreateSwapchainKHR exited with error code %d\n", result);
+		return result;
+	}
+
 	return result;
 }
 
@@ -488,5 +595,6 @@ VkResult initVulkan() {
 	if ((result = createSurface()) < VK_SUCCESS) return result;
 	if ((result = pickPhysicalDevice()) < VK_SUCCESS) return result;
 	if ((result = createLogicalDevice()) < VK_SUCCESS) return result;
+	if ((result = createSwapChain()) < VK_SUCCESS) return result;
 	return result;
 }

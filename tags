@@ -118,6 +118,7 @@ SRCS	makefile	/^SRCS = $(wildcard src\/*.c)$/;"	m
 SRC_DIR	makefile	/^SRC_DIR = src$/;"	m
 TARGET	makefile	/^TARGET = $(BUILD_DIR)\/renderer$/;"	m
 WIDTH	src/main.c	/^const uint32_t WIDTH = 800;$/;"	v	typeref:typename:const uint32_t
+__requiredDeviceExtensionsCount	src/initVulkan.c	/^static constexpr uint32_t __requiredDeviceExtensionsCount = 1;$/;"	v	typeref:typename:constexpr uint32_t	file:
 all	makefile	/^all: $(TARGET)$/;"	t
 arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:0
 arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:1
@@ -129,6 +130,7 @@ cleanUp	src/main.c	/^static void cleanUp() {$/;"	f	typeref:typename:void	file:
 createInstance	src/initVulkan.c	/^static VkResult createInstance() {$/;"	f	typeref:typename:VkResult	file:
 createLogicalDevice	src/initVulkan.c	/^static VkResult createLogicalDevice() {$/;"	f	typeref:typename:VkResult	file:
 createSurface	src/initVulkan.c	/^static VkResult createSurface() {$/;"	f	typeref:typename:VkResult	file:
+createSwapChain	src/initVulkan.c	/^VkResult createSwapChain() {$/;"	f	typeref:typename:VkResult
 device	src/main.c	/^VkDevice device = nullptr;$/;"	v	typeref:typename:VkDevice
 directory	compile_commands.json	/^    "directory": "\/Users\/shaikhammar\/Documents\/Programming\/graphics\/vulkan_renderer",$/;"	s	object:0
 directory	compile_commands.json	/^    "directory": "\/Users\/shaikhammar\/Documents\/Programming\/graphics\/vulkan_renderer",$/;"	s	object:1
@@ -154,12 +156,13 @@ output	compile_commands.json	/^    "output": "build\/objs\/main.o"$/;"	s	object:
 physicalDevice	src/main.c	/^VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;$/;"	v	typeref:typename:VkPhysicalDevice
 pickPhysicalDevice	src/initVulkan.c	/^static VkBool32 pickPhysicalDevice() {$/;"	f	typeref:typename:VkBool32	file:
 queue	src/main.c	/^VkQueue queue = nullptr; $/;"	v	typeref:typename:VkQueue
-requiredDeviceExtensions	src/initVulkan.c	/^static const char *requiredDeviceExtensions[requiredDeviceExtensionsCount + 1] = {$/;"	v	typeref:typename:const char * []	file:
-requiredDeviceExtensionsCount	src/initVulkan.c	/^constexpr uint32_t requiredDeviceExtensionsCount = 1;$/;"	v	typeref:typename:constexpr uint32_t
+requiredDeviceExtensions	src/initVulkan.c	/^static const char *requiredDeviceExtensions[__requiredDeviceExtensionsCount + 1] = {$/;"	v	typeref:typename:const char * []	file:
+requiredDeviceExtensionsCount	src/initVulkan.c	/^static uint32_t requiredDeviceExtensionsCount = __requiredDeviceExtensionsCount;$/;"	v	typeref:typename:uint32_t	file:
 requiredInstanceExtensions	src/initVulkan.c	/^static const char **requiredInstanceExtensions = nullptr;$/;"	v	typeref:typename:const char **	file:
 requiredInstanceExtensionsCount	src/initVulkan.c	/^static uint32_t requiredInstanceExtensionsCount = 0;$/;"	v	typeref:typename:uint32_t	file:
 run	src/main.c	/^static void run() {$/;"	f	typeref:typename:void	file:
 surface	src/main.c	/^VkSurfaceKHR surface = nullptr;$/;"	v	typeref:typename:VkSurfaceKHR
+swapChain	src/main.c	/^VkSwapchainKHR swapChain = nullptr;$/;"	v	typeref:typename:VkSwapchainKHR
 validationLayers	src/initVulkan.c	/^static const char *validationLayers[validationLayersCount] = {"VK_LAYER_KHRONOS_validation"};$/;"	v	typeref:typename:const char * []	file:
 validationLayersCount	src/initVulkan.c	/^static constexpr uint32_t validationLayersCount = 1;$/;"	v	typeref:typename:constexpr uint32_t	file:
 window	src/main.c	/^GLFWwindow *window = nullptr;$/;"	v	typeref:typename:GLFWwindow *

@@ -20,6 +20,7 @@ VkSurfaceKHR surface = nullptr;
 VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 VkDevice device = nullptr;
 VkQueue queue = nullptr; 
+VkSwapchainKHR swapChain = nullptr;
 
 static void mainLoop() {
 	while(!glfwWindowShouldClose(window)) {
@@ -28,6 +29,7 @@ static void mainLoop() {
 }
 
 static void cleanUp() {
+	if (swapChain) vkDestroySwapchainKHR(device, swapChain, nullptr);
 	if (device) vkDestroyDevice(device, nullptr);
 	if (surface) vkDestroySurfaceKHR(instance, surface, nullptr);
 	if (instance) vkDestroyInstance(instance, nullptr);
@@ -37,6 +39,7 @@ static void cleanUp() {
 
 extern VkResult initWindow();
 extern VkResult initVulkan();
+extern void cleanUp();
 static void run() {
 	if (initWindow() < VK_SUCCESS) goto cleanup;
 	if (initVulkan() < VK_SUCCESS) goto cleanup;
