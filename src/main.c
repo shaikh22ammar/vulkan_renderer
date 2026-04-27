@@ -20,10 +20,13 @@ VkSurfaceKHR surface = nullptr;
 VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 VkDevice device = nullptr;
 VkQueue queue = nullptr; 
+
 VkSwapchainKHR swapChain = nullptr;
 VkImage *swapChainImages = nullptr;
+uint32_t swapChainImagesCount = 0;
 VkSurfaceFormatKHR swapChainSurfaceFormat = {0};
 VkExtent2D swapChainExtent = {0};
+VkImageView *swapChainImageViews = nullptr;
 
 static void mainLoop() {
 	while(!glfwWindowShouldClose(window)) {
@@ -32,11 +35,31 @@ static void mainLoop() {
 }
 
 static void cleanUp() {
-	if (swapChain) vkDestroySwapchainKHR(device, swapChain, nullptr);
-	if (device) vkDestroyDevice(device, nullptr);
-	if (surface) vkDestroySurfaceKHR(instance, surface, nullptr);
-	if (instance) vkDestroyInstance(instance, nullptr);
-	if (window) glfwDestroyWindow(window);
+	goto swapChainImageViews;
+swapChainImageViews:
+	if (!swapChainImageViews) goto swapChain;
+	for (uint32_t i = 0; i < swapChainImagesCount; i++) {
+		vkDestroyImageView(device, swapChainImageViews[i], nullptr);
+	}
+	swapChainImageViews = nullptr;
+swapChain:
+	if (!swapChain) goto device;
+	vkDestroySwapchainKHR(device, swapChain, nullptr);
+	swapChainImages = nullptr;
+device:
+	if (!device) goto surface;
+	vkDestroyDevice(device, nullptr);
+	device = nullptr;
+surface:
+	if (!surface) goto instance;
+	vkDestroySurfaceKHR(instance, surface, nullptr);
+	surface = nullptr;
+instance:
+	if (!instance) goto glfw;
+	vkDestroyInstance(instance, nullptr);
+	instance = nullptr;
+glfw:
+	glfwDestroyWindow(window);
 	glfwTerminate();
 }
 

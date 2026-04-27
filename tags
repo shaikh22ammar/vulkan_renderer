@@ -127,6 +127,7 @@ checkExtensionSupport	src/initVulkan.c	/^static VkResult checkExtensionSupport()
 checkValidationLayerSupport	src/initVulkan.c	/^static VkResult checkValidationLayerSupport() {$/;"	f	typeref:typename:VkResult	file:
 clean	makefile	/^clean:$/;"	t
 cleanUp	src/main.c	/^static void cleanUp() {$/;"	f	typeref:typename:void	file:
+createImageViews	src/initVulkan.c	/^VkResult createImageViews() {$/;"	f	typeref:typename:VkResult
 createInstance	src/initVulkan.c	/^static VkResult createInstance() {$/;"	f	typeref:typename:VkResult	file:
 createLogicalDevice	src/initVulkan.c	/^static VkResult createLogicalDevice() {$/;"	f	typeref:typename:VkResult	file:
 createSurface	src/initVulkan.c	/^static VkResult createSurface() {$/;"	f	typeref:typename:VkResult	file:
@@ -164,7 +165,9 @@ run	src/main.c	/^static void run() {$/;"	f	typeref:typename:void	file:
 surface	src/main.c	/^VkSurfaceKHR surface = nullptr;$/;"	v	typeref:typename:VkSurfaceKHR
 swapChain	src/main.c	/^VkSwapchainKHR swapChain = nullptr;$/;"	v	typeref:typename:VkSwapchainKHR
 swapChainExtent	src/main.c	/^VkExtent2D swapChainExtent = {0};$/;"	v	typeref:typename:VkExtent2D
+swapChainImageViews	src/main.c	/^VkImageView *swapChainImageViews = nullptr;$/;"	v	typeref:typename:VkImageView *
 swapChainImages	src/main.c	/^VkImage *swapChainImages = nullptr;$/;"	v	typeref:typename:VkImage *
+swapChainImagesCount	src/main.c	/^uint32_t swapChainImagesCount = 0;$/;"	v	typeref:typename:uint32_t
 swapChainSurfaceFormat	src/main.c	/^VkSurfaceFormatKHR swapChainSurfaceFormat = {0};$/;"	v	typeref:typename:VkSurfaceFormatKHR
 validationLayers	src/initVulkan.c	/^static const char *validationLayers[validationLayersCount] = {"VK_LAYER_KHRONOS_validation"};$/;"	v	typeref:typename:const char * []	file:
 validationLayersCount	src/initVulkan.c	/^static constexpr uint32_t validationLayersCount = 1;$/;"	v	typeref:typename:constexpr uint32_t	file:

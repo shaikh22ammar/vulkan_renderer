@@ -489,6 +489,7 @@ static VkResult createLogicalDevice() {
 
 extern VkSwapchainKHR swapChain;
 extern VkImage *swapChainImages;
+extern uint32_t swapChainImagesCount;
 extern VkSurfaceFormatKHR swapChainSurfaceFormat;
 extern VkExtent2D swapChainExtent;
 VkResult createSwapChain() {
@@ -583,7 +584,7 @@ VkResult createSwapChain() {
 		return result;
 	}
 
-	uint32_t swapChainImagesCount;
+	// Creating swap chain images array
 	vkGetSwapchainImagesKHR(device, swapChain, &swapChainImagesCount, nullptr);
 	swapChainImages = malloc(sizeof(VkImage)*swapChainImagesCount);
 	if (!swapChainImages) {
@@ -601,6 +602,41 @@ VkResult createSwapChain() {
 }
 
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ *			IMAGE VIEW CREATION
+ *
+ *
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
+extern VkImageView *swapChainImageViews;
+VkResult createImageViews() {
+	VkResult result = VK_SUCCESS;
+	VkImageViewCreateInfo imageViewCreateInfo = {0};
+	imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	imageViewCreateInfo.pNext = nullptr;
+	imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	imageViewCreateInfo.format = swapChainSurfaceFormat.format;
+	imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+	imageViewCreateInfo.subresourceRange.levelCount = 1;
+	imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+	imageViewCreateInfo.subresourceRange.layerCount = 1;
+	imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+	imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+	imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+	imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+	
+	swapChainImageViews = malloc(sizeof(VkImageView)*swapChainImagesCount);
+	for (uint32_t i = 0; i < swapChainImagesCount; i++) {
+		imageViewCreateInfo.image = swapChainImages[i];
+		if ((result = vkCreateImageView(device, &imageViewCreateInfo, nullptr, swapChainImageViews + i)) < VK_SUCCESS) {
+			fprintf(stderr, "ERROR: vkCreateImageView exited with error code %d\n", result);
+		}
+	}
+	return result;
+}
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -613,5 +649,6 @@ VkResult initVulkan() {
 	if ((result = pickPhysicalDevice()) < VK_SUCCESS) return result;
 	if ((result = createLogicalDevice()) < VK_SUCCESS) return result;
 	if ((result = createSwapChain()) < VK_SUCCESS) return result;
+	if ((result = createImageViews()) < VK_SUCCESS) return result;
 	return result;
 }
