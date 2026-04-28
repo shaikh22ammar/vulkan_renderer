@@ -2,8 +2,11 @@
 .*
 
 # Build files
-/bin/
 /build/
 
 # Object files
 *.o
+
+# Compile commands
+compile_commands.json
+

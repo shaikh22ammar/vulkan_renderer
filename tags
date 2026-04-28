@@ -8,6 +8,7 @@
 !_TAG_FIELD_DESCRIPTION	name	/tag name/
 !_TAG_FIELD_DESCRIPTION	pattern	/pattern/
 !_TAG_FIELD_DESCRIPTION	typeref	/Type and name of a variable or typedef/
+!_TAG_FIELD_DESCRIPTION!C++	name	/aliased names/
 !_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
 !_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
 !_TAG_KIND_DESCRIPTION!C	d,macro	/macro definitions/
@@ -20,6 +21,35 @@
 !_TAG_KIND_DESCRIPTION!C	t,typedef	/typedefs/
 !_TAG_KIND_DESCRIPTION!C	u,union	/union names/
 !_TAG_KIND_DESCRIPTION!C	v,variable	/variable definitions/
+!_TAG_KIND_DESCRIPTION!C++	M,module	/modules/
+!_TAG_KIND_DESCRIPTION!C++	P,partition	/partitions/
+!_TAG_KIND_DESCRIPTION!C++	c,class	/classes/
+!_TAG_KIND_DESCRIPTION!C++	d,macro	/macro definitions/
+!_TAG_KIND_DESCRIPTION!C++	e,enumerator	/enumerators (values inside an enumeration)/
+!_TAG_KIND_DESCRIPTION!C++	f,function	/function definitions/
+!_TAG_KIND_DESCRIPTION!C++	g,enum	/enumeration names/
+!_TAG_KIND_DESCRIPTION!C++	h,header	/included header files/
+!_TAG_KIND_DESCRIPTION!C++	m,member	/class, struct, and union members/
+!_TAG_KIND_DESCRIPTION!C++	n,namespace	/namespaces/
+!_TAG_KIND_DESCRIPTION!C++	s,struct	/structure names/
+!_TAG_KIND_DESCRIPTION!C++	t,typedef	/typedefs/
+!_TAG_KIND_DESCRIPTION!C++	u,union	/union names/
+!_TAG_KIND_DESCRIPTION!C++	v,variable	/variable definitions/
+!_TAG_KIND_DESCRIPTION!D	M,module	/modules/
+!_TAG_KIND_DESCRIPTION!D	T,template	/templates/
+!_TAG_KIND_DESCRIPTION!D	V,version	/version statements/
+!_TAG_KIND_DESCRIPTION!D	X,mixin	/mixins/
+!_TAG_KIND_DESCRIPTION!D	a,alias	/aliases/
+!_TAG_KIND_DESCRIPTION!D	c,class	/classes/
+!_TAG_KIND_DESCRIPTION!D	e,enumerator	/enumerators (values inside an enumeration)/
+!_TAG_KIND_DESCRIPTION!D	f,function	/function definitions/
+!_TAG_KIND_DESCRIPTION!D	g,enum	/enumeration names/
+!_TAG_KIND_DESCRIPTION!D	i,interface	/interfaces/
+!_TAG_KIND_DESCRIPTION!D	m,member	/class, struct, and union members/
+!_TAG_KIND_DESCRIPTION!D	n,namespace	/namespaces/
+!_TAG_KIND_DESCRIPTION!D	s,struct	/structure names/
+!_TAG_KIND_DESCRIPTION!D	u,union	/union names/
+!_TAG_KIND_DESCRIPTION!D	v,variable	/variable definitions/
 !_TAG_KIND_DESCRIPTION!JSON	a,array	/arrays/
 !_TAG_KIND_DESCRIPTION!JSON	b,boolean	/booleans/
 !_TAG_KIND_DESCRIPTION!JSON	n,number	/numbers/
@@ -34,6 +64,8 @@
 !_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
 !_TAG_OUTPUT_VERSION	1.1	/current.age/
 !_TAG_PARSER_VERSION!C	1.1	/current.age/
+!_TAG_PARSER_VERSION!C++	2.2	/current.age/
+!_TAG_PARSER_VERSION!D	0.0	/current.age/
 !_TAG_PARSER_VERSION!JSON	0.0	/current.age/
 !_TAG_PARSER_VERSION!Make	1.1	/current.age/
 !_TAG_PATTERN_LENGTH_LIMIT	96	/0 for no limit/
@@ -47,63 +79,116 @@
 !_TAG_ROLE_DESCRIPTION!C!header	system	/system header/
 !_TAG_ROLE_DESCRIPTION!C!macro	undef	/undefined/
 !_TAG_ROLE_DESCRIPTION!C!struct	foreigndecl	/declared in foreign languages/
+!_TAG_ROLE_DESCRIPTION!C++!header	exported	/exported with "exported imported ..."/
+!_TAG_ROLE_DESCRIPTION!C++!header	imported	/imported with "imported ..."/
+!_TAG_ROLE_DESCRIPTION!C++!header	local	/local header/
+!_TAG_ROLE_DESCRIPTION!C++!header	system	/system header/
+!_TAG_ROLE_DESCRIPTION!C++!macro	undef	/undefined/
+!_TAG_ROLE_DESCRIPTION!C++!module	imported	/imported with "imported ..."/
+!_TAG_ROLE_DESCRIPTION!C++!module	partOwner	/used for specifying a partition/
+!_TAG_ROLE_DESCRIPTION!C++!partition	imported	/imported with "imported ..."/
 !_TAG_ROLE_DESCRIPTION!Make!makefile	included	/included/
 !_TAG_ROLE_DESCRIPTION!Make!makefile	optional	/optionally included/
 $(BUILD_DIR)	makefile	/^$(BUILD_DIR):$/;"	t
 $(OBJS_DIR)	makefile	/^$(OBJS_DIR): | $(BUILD_DIR)$/;"	t
-$(OBJS_DIR)/%.o	makefile	/^$(OBJS_DIR)\/%.o: $(SRC_DIR)\/%.c | $(OBJS_DIR)$/;"	t
+$(OBJS_DIR)/%.o	makefile	/^$(OBJS_DIR)\/%.o: $(SRC_DIR)\/%.c $(SPV_SHADERS) | $(OBJS_DIR)$/;"	t
+$(SLANG_DIR)/triangle.spv	makefile	/^$(SLANG_DIR)\/triangle.spv: $(SLANG_DIR)\/triangle.slang | $(SPV_DIR)$/;"	t
+$(SPV_DIR)	makefile	/^$(SPV_DIR):$/;"	t
 $(TARGET)	makefile	/^$(TARGET): $(OBJS) | $(BUILD_DIR)$/;"	t
-0	compile_commands.json	/^      "cc",$/;"	s	array:0.arguments
-0	compile_commands.json	/^      "cc",$/;"	s	array:1.arguments
-0	compile_commands.json	/^      "cc",$/;"	s	array:2.arguments
-0	compile_commands.json	/^  {$/;"	o
-1	compile_commands.json	/^      "-Wall",$/;"	s	array:0.arguments
-1	compile_commands.json	/^      "-Wall",$/;"	s	array:1.arguments
-1	compile_commands.json	/^      "-Wall",$/;"	s	array:2.arguments
-1	compile_commands.json	/^  {$/;"	o
-10	compile_commands.json	/^      "-g",$/;"	s	array:0.arguments
-10	compile_commands.json	/^      "-g",$/;"	s	array:1.arguments
-10	compile_commands.json	/^      "-g",$/;"	s	array:2.arguments
-11	compile_commands.json	/^      "-o",$/;"	s	array:0.arguments
-11	compile_commands.json	/^      "-o",$/;"	s	array:1.arguments
-11	compile_commands.json	/^      "-o",$/;"	s	array:2.arguments
-12	compile_commands.json	/^      "build\/objs\/initVulkan.o",$/;"	s	array:0.arguments
-12	compile_commands.json	/^      "build\/objs\/initWindow.o",$/;"	s	array:1.arguments
-12	compile_commands.json	/^      "build\/objs\/main.o",$/;"	s	array:2.arguments
-13	compile_commands.json	/^      "-c",$/;"	s	array:0.arguments
-13	compile_commands.json	/^      "-c",$/;"	s	array:1.arguments
-13	compile_commands.json	/^      "-c",$/;"	s	array:2.arguments
-14	compile_commands.json	/^      "src\/initVulkan.c"$/;"	s	array:0.arguments
-14	compile_commands.json	/^      "src\/initWindow.c"$/;"	s	array:1.arguments
-14	compile_commands.json	/^      "src\/main.c"$/;"	s	array:2.arguments
-2	compile_commands.json	/^      "-Wextra",$/;"	s	array:0.arguments
-2	compile_commands.json	/^      "-Wextra",$/;"	s	array:1.arguments
-2	compile_commands.json	/^      "-Wextra",$/;"	s	array:2.arguments
-2	compile_commands.json	/^  {$/;"	o
-3	compile_commands.json	/^      "-std=c23",$/;"	s	array:0.arguments
-3	compile_commands.json	/^      "-std=c23",$/;"	s	array:1.arguments
-3	compile_commands.json	/^      "-std=c23",$/;"	s	array:2.arguments
-4	compile_commands.json	/^      "-Wdouble-promotion",$/;"	s	array:0.arguments
-4	compile_commands.json	/^      "-Wdouble-promotion",$/;"	s	array:1.arguments
-4	compile_commands.json	/^      "-Wdouble-promotion",$/;"	s	array:2.arguments
-5	compile_commands.json	/^      "-Wfloat-conversion",$/;"	s	array:0.arguments
-5	compile_commands.json	/^      "-Wfloat-conversion",$/;"	s	array:1.arguments
-5	compile_commands.json	/^      "-Wfloat-conversion",$/;"	s	array:2.arguments
-6	compile_commands.json	/^      "-I\/usr\/local\/lib\/pkgconfig\/..\/..\/include",$/;"	s	array:0.arguments
-6	compile_commands.json	/^      "-I\/usr\/local\/lib\/pkgconfig\/..\/..\/include",$/;"	s	array:1.arguments
-6	compile_commands.json	/^      "-I\/usr\/local\/lib\/pkgconfig\/..\/..\/include",$/;"	s	array:2.arguments
-7	compile_commands.json	/^      "-I\/opt\/homebrew\/Cellar\/glfw\/3.4\/include",$/;"	s	array:0.arguments
-7	compile_commands.json	/^      "-I\/opt\/homebrew\/Cellar\/glfw\/3.4\/include",$/;"	s	array:1.arguments
-7	compile_commands.json	/^      "-I\/opt\/homebrew\/Cellar\/glfw\/3.4\/include",$/;"	s	array:2.arguments
-8	compile_commands.json	/^      "-DMAC_OS",$/;"	s	array:0.arguments
-8	compile_commands.json	/^      "-DMAC_OS",$/;"	s	array:1.arguments
-8	compile_commands.json	/^      "-DMAC_OS",$/;"	s	array:2.arguments
-9	compile_commands.json	/^      "-O0",$/;"	s	array:0.arguments
-9	compile_commands.json	/^      "-O0",$/;"	s	array:1.arguments
-9	compile_commands.json	/^      "-O0",$/;"	s	array:2.arguments
+0	compile_commands.json	/^   "cc",$/;"	s	array:0.arguments
+0	compile_commands.json	/^   "cc",$/;"	s	array:1.arguments
+0	compile_commands.json	/^   "cc",$/;"	s	array:2.arguments
+0	compile_commands.json	/^   "cc",$/;"	s	array:3.arguments
+0	compile_commands.json	/^   "cc",$/;"	s	array:4.arguments
+0	compile_commands.json	/^ {$/;"	o
+1	compile_commands.json	/^   "-Wall",$/;"	s	array:0.arguments
+1	compile_commands.json	/^   "-Wall",$/;"	s	array:1.arguments
+1	compile_commands.json	/^   "-Wall",$/;"	s	array:2.arguments
+1	compile_commands.json	/^   "-Wall",$/;"	s	array:3.arguments
+1	compile_commands.json	/^   "-Wall",$/;"	s	array:4.arguments
+1	compile_commands.json	/^ {$/;"	o
+10	compile_commands.json	/^   "-DMAC_OS",$/;"	s	array:0.arguments
+10	compile_commands.json	/^   "-DMAC_OS",$/;"	s	array:1.arguments
+10	compile_commands.json	/^   "-DMAC_OS",$/;"	s	array:2.arguments
+10	compile_commands.json	/^   "-DMAC_OS",$/;"	s	array:3.arguments
+10	compile_commands.json	/^   "-DMAC_OS",$/;"	s	array:4.arguments
+11	compile_commands.json	/^   "-O0",$/;"	s	array:0.arguments
+11	compile_commands.json	/^   "-O0",$/;"	s	array:1.arguments
+11	compile_commands.json	/^   "-O0",$/;"	s	array:2.arguments
+11	compile_commands.json	/^   "-O0",$/;"	s	array:3.arguments
+11	compile_commands.json	/^   "-O0",$/;"	s	array:4.arguments
+12	compile_commands.json	/^   "-g",$/;"	s	array:0.arguments
+12	compile_commands.json	/^   "-g",$/;"	s	array:1.arguments
+12	compile_commands.json	/^   "-g",$/;"	s	array:2.arguments
+12	compile_commands.json	/^   "-g",$/;"	s	array:3.arguments
+12	compile_commands.json	/^   "-g",$/;"	s	array:4.arguments
+13	compile_commands.json	/^   "-o",$/;"	s	array:0.arguments
+13	compile_commands.json	/^   "-o",$/;"	s	array:1.arguments
+13	compile_commands.json	/^   "-o",$/;"	s	array:2.arguments
+13	compile_commands.json	/^   "-o",$/;"	s	array:3.arguments
+13	compile_commands.json	/^   "-o",$/;"	s	array:4.arguments
+14	compile_commands.json	/^   "build\/objs\/graphicsPipeline.o",$/;"	s	array:0.arguments
+14	compile_commands.json	/^   "build\/objs\/initVulkan.o",$/;"	s	array:1.arguments
+14	compile_commands.json	/^   "build\/objs\/initWindow.o",$/;"	s	array:2.arguments
+14	compile_commands.json	/^   "build\/objs\/main.o",$/;"	s	array:3.arguments
+14	compile_commands.json	/^   "build\/objs\/readFile.o",$/;"	s	array:4.arguments
+15	compile_commands.json	/^   "-c",$/;"	s	array:0.arguments
+15	compile_commands.json	/^   "-c",$/;"	s	array:1.arguments
+15	compile_commands.json	/^   "-c",$/;"	s	array:2.arguments
+15	compile_commands.json	/^   "-c",$/;"	s	array:3.arguments
+15	compile_commands.json	/^   "-c",$/;"	s	array:4.arguments
+16	compile_commands.json	/^   "src\/graphicsPipeline.c"$/;"	s	array:0.arguments
+16	compile_commands.json	/^   "src\/initVulkan.c"$/;"	s	array:1.arguments
+16	compile_commands.json	/^   "src\/initWindow.c"$/;"	s	array:2.arguments
+16	compile_commands.json	/^   "src\/main.c"$/;"	s	array:3.arguments
+16	compile_commands.json	/^   "src\/readFile.c"$/;"	s	array:4.arguments
+2	compile_commands.json	/^   "-Wextra",$/;"	s	array:0.arguments
+2	compile_commands.json	/^   "-Wextra",$/;"	s	array:1.arguments
+2	compile_commands.json	/^   "-Wextra",$/;"	s	array:2.arguments
+2	compile_commands.json	/^   "-Wextra",$/;"	s	array:3.arguments
+2	compile_commands.json	/^   "-Wextra",$/;"	s	array:4.arguments
+2	compile_commands.json	/^ {$/;"	o
+3	compile_commands.json	/^   "-std=c23",$/;"	s	array:0.arguments
+3	compile_commands.json	/^   "-std=c23",$/;"	s	array:1.arguments
+3	compile_commands.json	/^   "-std=c23",$/;"	s	array:2.arguments
+3	compile_commands.json	/^   "-std=c23",$/;"	s	array:3.arguments
+3	compile_commands.json	/^   "-std=c23",$/;"	s	array:4.arguments
+3	compile_commands.json	/^ {$/;"	o
+4	compile_commands.json	/^   "-Wdouble-promotion",$/;"	s	array:0.arguments
+4	compile_commands.json	/^   "-Wdouble-promotion",$/;"	s	array:1.arguments
+4	compile_commands.json	/^   "-Wdouble-promotion",$/;"	s	array:2.arguments
+4	compile_commands.json	/^   "-Wdouble-promotion",$/;"	s	array:3.arguments
+4	compile_commands.json	/^   "-Wdouble-promotion",$/;"	s	array:4.arguments
+4	compile_commands.json	/^ {$/;"	o
+5	compile_commands.json	/^   "-Wfloat-conversion",$/;"	s	array:0.arguments
+5	compile_commands.json	/^   "-Wfloat-conversion",$/;"	s	array:1.arguments
+5	compile_commands.json	/^   "-Wfloat-conversion",$/;"	s	array:2.arguments
+5	compile_commands.json	/^   "-Wfloat-conversion",$/;"	s	array:3.arguments
+5	compile_commands.json	/^   "-Wfloat-conversion",$/;"	s	array:4.arguments
+6	compile_commands.json	/^   "-MMD",$/;"	s	array:0.arguments
+6	compile_commands.json	/^   "-MMD",$/;"	s	array:1.arguments
+6	compile_commands.json	/^   "-MMD",$/;"	s	array:2.arguments
+6	compile_commands.json	/^   "-MMD",$/;"	s	array:3.arguments
+6	compile_commands.json	/^   "-MMD",$/;"	s	array:4.arguments
+7	compile_commands.json	/^   "-MP",$/;"	s	array:0.arguments
+7	compile_commands.json	/^   "-MP",$/;"	s	array:1.arguments
+7	compile_commands.json	/^   "-MP",$/;"	s	array:2.arguments
+7	compile_commands.json	/^   "-MP",$/;"	s	array:3.arguments
+7	compile_commands.json	/^   "-MP",$/;"	s	array:4.arguments
+8	compile_commands.json	/^   "-I\/usr\/local\/lib\/pkgconfig\/..\/..\/include",$/;"	s	array:0.arguments
+8	compile_commands.json	/^   "-I\/usr\/local\/lib\/pkgconfig\/..\/..\/include",$/;"	s	array:1.arguments
+8	compile_commands.json	/^   "-I\/usr\/local\/lib\/pkgconfig\/..\/..\/include",$/;"	s	array:2.arguments
+8	compile_commands.json	/^   "-I\/usr\/local\/lib\/pkgconfig\/..\/..\/include",$/;"	s	array:3.arguments
+8	compile_commands.json	/^   "-I\/usr\/local\/lib\/pkgconfig\/..\/..\/include",$/;"	s	array:4.arguments
+9	compile_commands.json	/^   "-I\/opt\/homebrew\/Cellar\/glfw\/3.4\/include",$/;"	s	array:0.arguments
+9	compile_commands.json	/^   "-I\/opt\/homebrew\/Cellar\/glfw\/3.4\/include",$/;"	s	array:1.arguments
+9	compile_commands.json	/^   "-I\/opt\/homebrew\/Cellar\/glfw\/3.4\/include",$/;"	s	array:2.arguments
+9	compile_commands.json	/^   "-I\/opt\/homebrew\/Cellar\/glfw\/3.4\/include",$/;"	s	array:3.arguments
+9	compile_commands.json	/^   "-I\/opt\/homebrew\/Cellar\/glfw\/3.4\/include",$/;"	s	array:4.arguments
 BUILD_DIR	makefile	/^BUILD_DIR = build$/;"	m
 CC	makefile	/^CC = cc$/;"	m
 CFLAGS	makefile	/^CFLAGS = $/;"	m
+DEPS	makefile	/^DEPS = $(OBJS:.o=.d)$/;"	m
 GLFW_INCLUDE_VULKAN	src/initVulkan.c	/^#define GLFW_INCLUDE_VULKAN$/;"	d	file:
 GLFW_INCLUDE_VULKAN	src/initWindow.c	/^#define GLFW_INCLUDE_VULKAN$/;"	d	file:
 GLFW_INCLUDE_VULKAN	src/main.c	/^#define GLFW_INCLUDE_VULKAN$/;"	d	file:
@@ -114,15 +199,30 @@ HEIGHT	src/main.c	/^const uint32_t HEIGHT = 600;$/;"	v	typeref:typename:const ui
 LDFLAGS	makefile	/^LDFLAGS =$/;"	m
 OBJS	makefile	/^OBJS = $(patsubst $(SRC_DIR)\/%, $(OBJS_DIR)\/%, $(SRCS:.c=.o))$/;"	m
 OBJS_DIR	makefile	/^OBJS_DIR = $(BUILD_DIR)\/objs$/;"	m
-SRCS	makefile	/^SRCS = $(wildcard src\/*.c)$/;"	m
+READ_FILE_ERROR_END	src/readFile.h	/^	READ_FILE_ERROR_END,$/;"	e	enum:ReadFileResult
+READ_FILE_ERROR_OPEN	src/readFile.h	/^	READ_FILE_ERROR_OPEN = -3,$/;"	e	enum:ReadFileResult
+READ_FILE_ERROR_READING	src/readFile.h	/^	READ_FILE_ERROR_READING,$/;"	e	enum:ReadFileResult
+READ_FILE_H	src/readFile.h	/^#define READ_FILE_H$/;"	d
+READ_FILE_INCOMPLETE	src/readFile.h	/^	READ_FILE_INCOMPLETE = 1$/;"	e	enum:ReadFileResult
+READ_FILE_SUCCESS	src/readFile.h	/^	READ_FILE_SUCCESS = 0,$/;"	e	enum:ReadFileResult
+ReadFileResult	src/readFile.h	/^enum ReadFileResult {$/;"	g
+SC	makefile	/^SC = slangc$/;"	m
+SCFLAGS	makefile	/^SCFLAGS = -target spirv -profile spirv_1_4 -emit-spirv-directly -fvk-use-entrypoint-name $/;"	m
+SLANG_DIR	makefile	/^SLANG_DIR = $(SRC_DIR)\/shaders$/;"	m
+SLANG_SHADERS	makefile	/^SLANG_SHADERS = $(wildcard $(SPV_DIR)\/*.slang)$/;"	m
+SPV_DIR	makefile	/^SPV_DIR = $(SRC_DIR)\/shaders$/;"	m
+SPV_SHADERS	makefile	/^SPV_SHADERS = $(patsubst $(SLANG_DIR)\/%, $(SPV_DIR)\/%, $(SLANG_SHADERS:.slang=.spv))$/;"	m
+SRCS	makefile	/^SRCS = $(wildcard $(SRC_DIR)\/*.c)$/;"	m
 SRC_DIR	makefile	/^SRC_DIR = src$/;"	m
 TARGET	makefile	/^TARGET = $(BUILD_DIR)\/renderer$/;"	m
 WIDTH	src/main.c	/^const uint32_t WIDTH = 800;$/;"	v	typeref:typename:const uint32_t
 __requiredDeviceExtensionsCount	src/initVulkan.c	/^static constexpr uint32_t __requiredDeviceExtensionsCount = 1;$/;"	v	typeref:typename:constexpr uint32_t	file:
 all	makefile	/^all: $(TARGET)$/;"	t
-arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:0
-arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:1
-arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:2
+arguments	compile_commands.json	/^  "arguments": [$/;"	a	object:0
+arguments	compile_commands.json	/^  "arguments": [$/;"	a	object:1
+arguments	compile_commands.json	/^  "arguments": [$/;"	a	object:2
+arguments	compile_commands.json	/^  "arguments": [$/;"	a	object:3
+arguments	compile_commands.json	/^  "arguments": [$/;"	a	object:4
 checkExtensionSupport	src/initVulkan.c	/^static VkResult checkExtensionSupport() {$/;"	f	typeref:typename:VkResult	file:
 checkValidationLayerSupport	src/initVulkan.c	/^static VkResult checkValidationLayerSupport() {$/;"	f	typeref:typename:VkResult	file:
 clean	makefile	/^clean:$/;"	t
@@ -133,14 +233,18 @@ createLogicalDevice	src/initVulkan.c	/^static VkResult createLogicalDevice() {$/
 createSurface	src/initVulkan.c	/^static VkResult createSurface() {$/;"	f	typeref:typename:VkResult	file:
 createSwapChain	src/initVulkan.c	/^VkResult createSwapChain() {$/;"	f	typeref:typename:VkResult
 device	src/main.c	/^VkDevice device = nullptr;$/;"	v	typeref:typename:VkDevice
-directory	compile_commands.json	/^    "directory": "\/Users\/shaikhammar\/Documents\/Programming\/graphics\/vulkan_renderer",$/;"	s	object:0
-directory	compile_commands.json	/^    "directory": "\/Users\/shaikhammar\/Documents\/Programming\/graphics\/vulkan_renderer",$/;"	s	object:1
-directory	compile_commands.json	/^    "directory": "\/Users\/shaikhammar\/Documents\/Programming\/graphics\/vulkan_renderer",$/;"	s	object:2
+directory	compile_commands.json	/^  "directory": "\/Users\/shaikhammar\/Documents\/Programming\/graphics\/vulkan_renderer",$/;"	s	object:0
+directory	compile_commands.json	/^  "directory": "\/Users\/shaikhammar\/Documents\/Programming\/graphics\/vulkan_renderer",$/;"	s	object:1
+directory	compile_commands.json	/^  "directory": "\/Users\/shaikhammar\/Documents\/Programming\/graphics\/vulkan_renderer",$/;"	s	object:2
+directory	compile_commands.json	/^  "directory": "\/Users\/shaikhammar\/Documents\/Programming\/graphics\/vulkan_renderer",$/;"	s	object:3
+directory	compile_commands.json	/^  "directory": "\/Users\/shaikhammar\/Documents\/Programming\/graphics\/vulkan_renderer",$/;"	s	object:4
 enableValidationLayers	src/initVulkan.c	/^constexpr VkBool32 enableValidationLayers = VK_FALSE;$/;"	v	typeref:typename:constexpr VkBool32
 enableValidationLayers	src/initVulkan.c	/^constexpr VkBool32 enableValidationLayers = VK_TRUE;$/;"	v	typeref:typename:constexpr VkBool32
-file	compile_commands.json	/^    "file": "src\/initVulkan.c",$/;"	s	object:0
-file	compile_commands.json	/^    "file": "src\/initWindow.c",$/;"	s	object:1
-file	compile_commands.json	/^    "file": "src\/main.c",$/;"	s	object:2
+file	compile_commands.json	/^  "file": "src\/graphicsPipeline.c"$/;"	s	object:0
+file	compile_commands.json	/^  "file": "src\/initVulkan.c"$/;"	s	object:1
+file	compile_commands.json	/^  "file": "src\/initWindow.c"$/;"	s	object:2
+file	compile_commands.json	/^  "file": "src\/main.c"$/;"	s	object:3
+file	compile_commands.json	/^  "file": "src\/readFile.c"$/;"	s	object:4
 initVulkan	src/initVulkan.c	/^VkResult initVulkan() {$/;"	f	typeref:typename:VkResult
 initWindow	src/initWindow.c	/^VkResult initWindow() {$/;"	f	typeref:typename:VkResult
 instance	src/main.c	/^VkInstance instance = nullptr;$/;"	v	typeref:typename:VkInstance
@@ -151,12 +255,10 @@ isPortabilitySubsetRequired	src/initVulkan.c	/^static VkBool32 isPortabilitySubs
 main	src/main.c	/^int main() {$/;"	f	typeref:typename:int
 main	test/test.c	/^int main() {$/;"	f	typeref:typename:int
 mainLoop	src/main.c	/^static void mainLoop() {$/;"	f	typeref:typename:void	file:
-output	compile_commands.json	/^    "output": "build\/objs\/initVulkan.o"$/;"	s	object:0
-output	compile_commands.json	/^    "output": "build\/objs\/initWindow.o"$/;"	s	object:1
-output	compile_commands.json	/^    "output": "build\/objs\/main.o"$/;"	s	object:2
 physicalDevice	src/main.c	/^VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;$/;"	v	typeref:typename:VkPhysicalDevice
 pickPhysicalDevice	src/initVulkan.c	/^static VkBool32 pickPhysicalDevice() {$/;"	f	typeref:typename:VkBool32	file:
 queue	src/main.c	/^VkQueue queue = nullptr; $/;"	v	typeref:typename:VkQueue
+readFile	src/readFile.c	/^enum ReadFileResult readFile(char *filepath, char *buffer, size_t *pBufSize) {$/;"	f	typeref:enum:ReadFileResult
 requiredDeviceExtensions	src/initVulkan.c	/^static const char *requiredDeviceExtensions[__requiredDeviceExtensionsCount + 1] = {$/;"	v	typeref:typename:const char * []	file:
 requiredDeviceExtensionsCount	src/initVulkan.c	/^static uint32_t requiredDeviceExtensionsCount = __requiredDeviceExtensionsCount;$/;"	v	typeref:typename:uint32_t	file:
 requiredInstanceExtensions	src/initVulkan.c	/^static const char **requiredInstanceExtensions = nullptr;$/;"	v	typeref:typename:const char **	file:

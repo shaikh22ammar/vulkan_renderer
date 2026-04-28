@@ -35,31 +35,31 @@ static void mainLoop() {
 }
 
 static void cleanUp() {
-	goto swapChainImageViews;
-swapChainImageViews:
-	if (!swapChainImageViews) goto swapChain;
+	// swapchain image views
 	for (uint32_t i = 0; i < swapChainImagesCount; i++) {
 		vkDestroyImageView(device, swapChainImageViews[i], nullptr);
 	}
 	swapChainImageViews = nullptr;
-swapChain:
-	if (!swapChain) goto device;
+
+	// swapchain
 	vkDestroySwapchainKHR(device, swapChain, nullptr);
 	swapChainImages = nullptr;
-device:
-	if (!device) goto surface;
+
+	// device
 	vkDestroyDevice(device, nullptr);
 	device = nullptr;
-surface:
-	if (!surface) goto instance;
+
+	// surface
 	vkDestroySurfaceKHR(instance, surface, nullptr);
 	surface = nullptr;
-instance:
-	if (!instance) goto glfw;
+
+	// instance
 	vkDestroyInstance(instance, nullptr);
 	instance = nullptr;
-glfw:
+
+	// glfw
 	glfwDestroyWindow(window);
+	window = nullptr;
 	glfwTerminate();
 }
 
