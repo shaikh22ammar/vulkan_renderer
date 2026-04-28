@@ -1,12 +1,15 @@
-# Hidden files
-.*
-
 # Build files
 /build/
 
 # Object files
 *.o
 
+# SPIR-V compiled shaders
+*.spv
+
 # Compile commands
 compile_commands.json
 
+# Junk
+.DS_STORE
+.cache/
