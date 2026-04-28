@@ -11,5 +11,5 @@
 compile_commands.json
 
 # Junk
-.DS_STORE
-.cache/
+.DS_Store
+/.cache/
