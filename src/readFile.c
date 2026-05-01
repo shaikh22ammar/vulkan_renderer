@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "readFile.h"
 
 enum ReadFileResult readFile(char *filepath, char *buffer, size_t *pBufSize) {
@@ -42,6 +41,6 @@ enum ReadFileResult readFile(char *filepath, char *buffer, size_t *pBufSize) {
 	size_t minSize = ((size_t) fileSize < *pBufSize) ? (size_t) fileSize : *pBufSize;
 	if (charsRead < minSize) result = READ_FILE_ERROR_READING;
 cleanup:
-	fclose(file);
+	if (file) fclose(file);
 	return result;
 }

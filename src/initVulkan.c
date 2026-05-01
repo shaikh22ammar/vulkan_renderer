@@ -1,17 +1,9 @@
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
  *			VULKAN INTIALIZATION
  *
  * 		Baisc vulkan boilerplate: instance and device creation.
- *
- * 		The following external variables are initialized here:
- * 			instance
- * 			surface
- * 			physicalDevice
- * 			device
- * 			queue
- *
- * 		when main calls the external function initVulkan() defined here.
  *
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
@@ -29,25 +21,14 @@
 #include <vulkan/vulkan_beta.h>
 #endif
 
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
  *			INSTANCE CREATION
  *
- *	A vulkan instance is created.
- *	Validation layers are checked if program is in debug mode.
- *	Required extensions are checked for GLFW and MoltenVk if program is in MAC_OS mode
- *
- *	Global variables:
- *		instance (extern)
- *
- *	Functions:
- *		checkExtensionSupport()
- *		createInstance()
- *
- *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
 
-#ifdef NDEBUG
+#ifdef NDEBUG // Disable validation if debug mode is not set 
 constexpr VkBool32 enableValidationLayers = VK_FALSE;
 #else
 constexpr VkBool32 enableValidationLayers = VK_TRUE;
@@ -55,6 +36,8 @@ constexpr VkBool32 enableValidationLayers = VK_TRUE;
 static constexpr uint32_t validationLayersCount = 1;
 static const char *validationLayers[validationLayersCount] = {"VK_LAYER_KHRONOS_validation"};
 static VkResult checkValidationLayerSupport() {
+	/* Checks if the validation layers in the 
+	 * global validationLayers is supported */
 	VkResult result = VK_SUCCESS;
 
 	uint32_t supportedLayersNum = 0;
@@ -82,6 +65,8 @@ static VkResult checkValidationLayerSupport() {
 static uint32_t requiredInstanceExtensionsCount = 0;
 static const char **requiredInstanceExtensions = nullptr;
 static VkResult checkExtensionSupport() {
+	/* Checks if the required instance extensions are supported in the instance 
+	 * Exits if not supported */
 	VkResult result = VK_SUCCESS;
 
 	uint32_t supportedExtensionsNum = 0;
@@ -99,6 +84,7 @@ static VkResult checkExtensionSupport() {
 		if (!found) {
 			fprintf(stderr, "ERROR: Required extension %s is not supported\n", requiredInstanceExtensions[i]);
 			result = VK_ERROR_EXTENSION_NOT_PRESENT;
+			exit(result);
 		}
 	}
 
@@ -107,6 +93,10 @@ static VkResult checkExtensionSupport() {
 
 extern VkInstance instance;
 static VkResult createInstance() {
+	/* Creates an Instance
+	 * First, checks if the given validation layers are supported (provided NDEBUG is not defined),
+	 * Then checks for the required instance extensions (these are glfw extensions,
+	 * and portability extensions for MacOS) */
 	VkResult result = VK_SUCCESS;
 
 	// Checking validation layer support
@@ -115,14 +105,15 @@ static VkResult createInstance() {
 		if (result < VK_SUCCESS) return result;
 	}
 
-	// Finding required extensions
+	// Finding required extensions for glfw
 	uint32_t glfwExtensionCount = 0;
 	const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
 	requiredInstanceExtensionsCount = glfwExtensionCount;
-	#ifdef MAC_OS // portability extension is required for MoltenVk
+	// portability extension is required for MoltenVk
+#ifdef MAC_OS 
 	requiredInstanceExtensionsCount++;
-	#endif
+#endif
 	requiredInstanceExtensions = malloc((sizeof *glfwExtensions) * requiredInstanceExtensionsCount);
 	if (!requiredInstanceExtensions) {
 		fprintf(stderr, "ERROR: Failed allocating memory for GLFW extensions\n");
@@ -134,10 +125,10 @@ static VkResult createInstance() {
 		requiredInstanceExtensions[i] = glfwExtensions[i];
 		printf("%s, ", requiredInstanceExtensions[i]);
 	}
-	#ifdef MAC_OS
+#ifdef MAC_OS
 	requiredInstanceExtensions[requiredInstanceExtensionsCount - 1] = VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME;
 	printf("%s\n", VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-	#endif
+#endif
 
 	// Checking for extension support
 	if ((result = checkExtensionSupport()) < VK_SUCCESS) {
@@ -145,7 +136,7 @@ static VkResult createInstance() {
 	}
 	puts("");
 
-	VkApplicationInfo appInfo;
+	VkApplicationInfo appInfo = {0};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pNext = nullptr;
 	appInfo.pApplicationName = "Hello Triangle";
@@ -154,7 +145,7 @@ static VkResult createInstance() {
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.apiVersion = VK_API_VERSION_1_3;
 
-	VkInstanceCreateInfo createInfo;
+	VkInstanceCreateInfo createInfo = {0};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pNext = nullptr;
 	createInfo.pApplicationInfo = &appInfo;
@@ -166,21 +157,21 @@ static VkResult createInstance() {
 	} else {
 		createInfo.enabledLayerCount = 0;
 	}
-	#ifdef MAC_OS
+#ifdef MAC_OS
 	createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-	#endif
-
+#endif
 	result = vkCreateInstance(&createInfo, nullptr, &instance);
 	if (result < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: vkCreateInstance failed with exit code: %d\n", result);
-		goto failure;
+		exit(result);
+		//goto failure;
 	}
 	free(requiredInstanceExtensions);
 	requiredInstanceExtensions = nullptr;
 	return result;
 
 failure:
-	if (requiredInstanceExtensions != nullptr) {
+	if (requiredInstanceExtensions) {
 		free(requiredInstanceExtensions);
 		requiredInstanceExtensions = nullptr;
 	}
@@ -191,15 +182,6 @@ failure:
  *
  *			SURFACE CREATION
  *
- *		A vulkan surface is created
- *
- *		Global variables:
- *			window (extern)
- *			surface (extern)
- *
- *		Functions:
- *			createSurface()
- *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
 extern GLFWwindow *window;
 extern VkSurfaceKHR surface;
@@ -207,6 +189,7 @@ static VkResult createSurface() {
 	VkResult result;
 	if ((result = glfwCreateWindowSurface(instance, window, nullptr, &surface)) < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: glfwCreateWindowSurface exited with error code %d", result);
+		exit(result);
 	}
 	return result;
 }
@@ -215,36 +198,34 @@ static VkResult createSurface() {
  *
  *			PHYSICAL DEVICE CHOICE
  *
- * 	A physical device is chosen.
- *
- *	Global variables:
- *		requiredDeviceExtensions[requiredDeviceExtensionsCount + 1]
- *		//requiredQueueCommandsQueueFamilyIndex
- * 		physicalDevice (extern)
- *
- *	Functions:
- *		isDeviceSuitable()
- *		pickPhysicalDevice()
- *
- *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
+// The compile-time constance number of device extensions required
 static constexpr uint32_t __requiredDeviceExtensionsCount = 1;
+// the runtime dependent number of device extensions required
+// (protability extensions for non-Vulkan compatible devices)
 static uint32_t requiredDeviceExtensionsCount = __requiredDeviceExtensionsCount;
 static const char *requiredDeviceExtensions[__requiredDeviceExtensionsCount + 1] = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME, 
 	VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
 };
-static VkBool32 isPortabilitySubsetRequired = VK_FALSE;
-//static struct {uint32_t graphicsFamily; uint32_t presentFamily;} requiredQueueCommandsQueueFamilyIndex;
-static VkBool32 isDeviceSuitable(VkPhysicalDevice currPhysicalDevice) {
+static uint32_t isDeviceSuitable(VkPhysicalDevice currPhysicalDevice) {
+	/* Checks if currPhysicalDevice is suitable.
+	 * A device is considered suitable if:
+	 * It supports at least API version 1.3,
+	 * It supports dynamic rendering and dynamic state extensions,
+	 * It supports the required device extensions,
+	 * If it has a queue family that supports both graphics and present command. 
+	 * Also, if a device supports portability extension is checked,
+	 * if so, it must be activated */
+	
 	// check if device supports api version 1.3 or higher
-	VkPhysicalDeviceProperties2 deviceProperies;
+	VkPhysicalDeviceProperties2 deviceProperies = {0};
 	deviceProperies.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 	deviceProperies.pNext = nullptr;
 	vkGetPhysicalDeviceProperties2(currPhysicalDevice, &deviceProperies);
 	VkBool32 isApiVersionSupported = deviceProperies.properties.apiVersion >= VK_API_VERSION_1_3;
 
-	// check if dynamic rendering and extended dynamic state features are supported
+	// check if dynamic rendering and dynamic state features extensions are supported
 	VkPhysicalDeviceExtendedDynamicStateFeaturesEXT deviceVulkanExtendedDynamicStateFeaturesEXT;
 	deviceVulkanExtendedDynamicStateFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
 	deviceVulkanExtendedDynamicStateFeaturesEXT.pNext = nullptr;
@@ -262,6 +243,7 @@ static VkBool32 isDeviceSuitable(VkPhysicalDevice currPhysicalDevice) {
 		&& deviceVulkanExtendedDynamicStateFeaturesEXT.extendedDynamicState;
 
 	// check if requireds extensions are supported
+	VkBool32 isPortabilitySubsetRequired = VK_FALSE;
 	VkBool32 isAllDeviceExtensionsSupported = VK_TRUE;
 	uint32_t supportedDeviceExtensionPropertiesCount;
 	vkEnumerateDeviceExtensionProperties(currPhysicalDevice, nullptr, &supportedDeviceExtensionPropertiesCount, nullptr);
@@ -279,19 +261,20 @@ static VkBool32 isDeviceSuitable(VkPhysicalDevice currPhysicalDevice) {
 			&supportedDeviceExtensionPropertiesCount, 
 			supportedDeviceExtensionProperties
 			);
-	for(uint32_t i = 0; i < __requiredDeviceExtensionsCount; i++) {
+	for(uint32_t i = 0; i < __requiredDeviceExtensionsCount + 1; i++) {
 		VkBool32 found = VK_FALSE;
 		for (uint32_t j = 0; j < supportedDeviceExtensionPropertiesCount; j++) {
 			if (!strcmp(requiredDeviceExtensions[i], supportedDeviceExtensionProperties[j].extensionName)) {
 				found = VK_TRUE;
+				if (i == __requiredDeviceExtensionsCount) {
+					// Portability device extension found, hence required
+					requiredDeviceExtensionsCount++;
+					isPortabilitySubsetRequired = VK_TRUE;
+				}
 				break;
 			}
-			if (!strcmp(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME, supportedDeviceExtensionProperties[j].extensionName)) {
-				isPortabilitySubsetRequired = VK_TRUE;
-				requiredDeviceExtensionsCount++;
-			} 
 		}
-		if (!found) {
+		if (!found && i < __requiredDeviceExtensionsCount) {
 			isAllDeviceExtensionsSupported = VK_FALSE;
 			break;
 		}
@@ -332,7 +315,15 @@ static VkBool32 isDeviceSuitable(VkPhysicalDevice currPhysicalDevice) {
 	free(queueFamiliesProperties);
 	queueFamiliesProperties = nullptr;
 
-	return isApiVersionSupported && isAllQueueCommandsSupported && isAllFeaturesSupported && isAllDeviceExtensionsSupported;
+	uint32_t result = 0U;
+	result |= isApiVersionSupported;
+	result |= isAllQueueCommandsSupported << 1;
+	result |= isAllFeaturesSupported << 2;
+	result |= isAllDeviceExtensionsSupported << 3;
+	result |= isPortabilitySubsetRequired << 4;
+
+	return result;
+
 }
 
 extern VkPhysicalDevice physicalDevice;
@@ -354,13 +345,14 @@ static VkBool32 pickPhysicalDevice() {
 		currPhysicalDeviceProperies.pNext = nullptr;
 		vkGetPhysicalDeviceProperties2(currPhysicalDevice, &currPhysicalDeviceProperies);
 		printf("%d: %s\n", currPhysicalDeviceProperies.properties.deviceID, currPhysicalDeviceProperies.properties.deviceName);		
-		if (isDeviceSuitable(currPhysicalDevice) && physicalDevice == VK_NULL_HANDLE) {
+		if (isDeviceSuitable(currPhysicalDevice) >= 0x1F && physicalDevice == VK_NULL_HANDLE) {
 			physicalDevice = currPhysicalDevice;
 		}
 	}
 	if (physicalDevice == VK_NULL_HANDLE) {
 		fprintf(stderr, "ERROR: Unable to find any suitable GPU");
-		return VK_FALSE;
+		exit(VK_ERROR_INCOMPATIBLE_DRIVER);
+		//return VK_FALSE;
 	}
 	VkPhysicalDeviceProperties2 chosenDeviceProperies;
 	chosenDeviceProperies.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
@@ -375,20 +367,14 @@ static VkBool32 pickPhysicalDevice() {
  *
  *			LOGICAL DEVICE CREATION
  *
- * 	A logical device is created.
- *
- *	Global variables:
- *		device (extern)
- *		queue (extern)
- *
- *	Functions:
- *		createLogicalDevice()
- *
- *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
 extern VkDevice device;
 extern VkQueue queue; 
 static VkResult createLogicalDevice() {
+	/* Creates the logical device.
+	 * Finds the queue family that supports both graphics and present command, initializes queue with that
+	 * Note, if device requires portability extension, requiredDeviceExtensionsCount would already be incremented by now
+	 * to reflect this */
 	VkResult result = VK_SUCCESS;
 
 	// Finding the queueFamilyIndex that supports graphics and presentation commands simultanteously
@@ -406,13 +392,13 @@ static VkResult createLogicalDevice() {
 		fprintf(stderr, 
 			"ERROR: Failed allocating memory for finding queue families of device: %d\n",
 			deviceProperies.properties.deviceID);
-		return VK_FALSE;
+		exit(VK_ERROR_OUT_OF_HOST_MEMORY);
+		//return VK_ERROR_OUT_OF_HOST_MEMORY;
 	}
 	for (uint32_t i = 0; i < queueFamiliesCount; i++) {
 		queueFamiliesProperties[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2;
 		queueFamiliesProperties[i].pNext = nullptr;
 	}
-
 	vkGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, &queueFamiliesCount, queueFamiliesProperties);
 	for (uint32_t i = 0; i < queueFamiliesCount; i++) {
 		VkQueueFamilyProperties2 queueFamily = queueFamiliesProperties[i];
@@ -433,7 +419,8 @@ static VkResult createLogicalDevice() {
 	if (!queueFamilyFound) {
 		result = VK_ERROR_INITIALIZATION_FAILED;
 		fprintf(stderr, "ERROR: No queue family found that supports both graphics and present commands.\n");
-		return result;
+		exit(VK_ERROR_INITIALIZATION_FAILED);
+		//return result;
 	}
 
 	// Specifying queues
@@ -471,7 +458,8 @@ static VkResult createLogicalDevice() {
 
 	if ((result = vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device)) < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: vkCreateDevice failed with exit code: %d\n", result);
-		return result;
+		exit(result);
+		//return result;
 	}
 
  	vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue);
@@ -483,8 +471,6 @@ static VkResult createLogicalDevice() {
  *
  *			SWAP CHAIN CREATION
  *
- *
- *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
 
 extern VkSwapchainKHR swapChain;
@@ -493,6 +479,16 @@ extern uint32_t swapChainImagesCount;
 extern VkSurfaceFormatKHR swapChainSurfaceFormat;
 extern VkExtent2D swapChainExtent;
 VkResult createSwapChain() {
+	/* Swap chain creation
+	 *
+	 * Surface is created.
+	 * Format B8G8R8_SRGB, color space SRGB Nonlinear
+	 * if supported, otherwise falls back to format that comes first.
+	 *
+	 * Present mode is chosen as Mailbox, but falls back to fifo if not supported.
+	 * */
+
+
 	// Choosing surface format
 	VkResult result = VK_SUCCESS;
 	uint32_t surfaceFormatsCount;
@@ -500,11 +496,14 @@ VkResult createSwapChain() {
 	VkSurfaceFormatKHR *surfaceFormats = malloc(sizeof(VkSurfaceFormatKHR)*surfaceFormatsCount);
 	if (!surfaceFormats) {
 		fprintf(stderr, "ERROR: Failed allocating memory for querying surface format\n");
-		return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+		result = VK_ERROR_OUT_OF_HOST_MEMORY;
+		exit(result);
+		//return result;
 	}
 	if((result = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatsCount, surfaceFormats)) < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: vkGetPhysicalDeviceSurfaceFormatsKHR exited with error code %d\n", result);
-		return result;
+		exit(result);
+		//return result;
 	}
 	VkSurfaceFormatKHR surfaceFormat = surfaceFormats[0];
 	for (uint32_t i = 0; i < surfaceFormatsCount; i++) {
@@ -522,11 +521,14 @@ VkResult createSwapChain() {
 	VkPresentModeKHR *presentModes = malloc(sizeof(VkPresentModeKHR)*presentModesCount);
 	if (!presentModes) {
 		fprintf(stderr, "ERROR: Failed allocating memory for querying present modes\n");
-		return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+		result = VK_ERROR_OUT_OF_HOST_MEMORY;
+		exit(result);
+		//return result;
 	}
 	if ((result = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModesCount, presentModes)) < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: vkGetPhysicalDeviceSurfacePresentModesKHR exited with error code %d\n", result);
-		return result;
+		exit(result);
+		//return result;
 	}
 	VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
 	for (uint32_t i = 0; i < presentModesCount; i++) {
@@ -543,6 +545,7 @@ VkResult createSwapChain() {
 	VkExtent2D surfaceExtent = surfaceCapabilities.currentExtent;
 	if ((result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCapabilities)) < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: vkGetPhysicalDeviceSurfaceCapabilitiesKHR exited with error code %d\n", result);
+		exit(result);
 		return result;
 	}
 	if (surfaceCapabilities.currentExtent.width < ~0U && surfaceCapabilities.currentExtent.width > 0U) {
@@ -571,17 +574,25 @@ VkResult createSwapChain() {
 	swapChainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
 	swapChainCreateInfo.imageExtent = surfaceExtent;
 	swapChainCreateInfo.imageArrayLayers = 1U;
-	swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; 
+				/* specifies that the image can be 
+				 * used to create a VkImageView suitable for use as a color */
 	swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+				/* specifies that access to any range or image subresource 
+				 * of the object will be exclusive to a single queue family at a time. */
 	swapChainCreateInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+				/* No transformation */
 	swapChainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 	swapChainCreateInfo.presentMode = presentMode;
 	swapChainCreateInfo.clipped = VK_TRUE;
+				/* specifies whether the Vulkan implementation is allowed to
+				 * discard rendering operations that affect regions of the surface that are not visible. */
 	swapChainCreateInfo.oldSwapchain = nullptr;
 
 	if ((result = vkCreateSwapchainKHR(device, &swapChainCreateInfo, nullptr, &swapChain)) < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: vkCreateSwapchainKHR exited with error code %d\n", result);
-		return result;
+		exit(result);
+		//return result;
 	}
 
 	// Creating swap chain images array
@@ -589,11 +600,14 @@ VkResult createSwapChain() {
 	swapChainImages = malloc(sizeof(VkImage)*swapChainImagesCount);
 	if (!swapChainImages) {
 		fprintf(stderr, "ERROR: Failed allocating memory for swap chain images.\n");
-		return VK_ERROR_OUT_OF_HOST_MEMORY;
+		result = VK_ERROR_OUT_OF_HOST_MEMORY;
+		exit(result);
+		//return result;
 	}
 	if ((result = vkGetSwapchainImagesKHR(device, swapChain, &swapChainImagesCount, swapChainImages)) < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: vkGetSwapchainImagesKHR exited with error code %d\n", result);
-		return result;
+		exit(result);
+		//return result;
 	}
 	swapChainSurfaceFormat = surfaceFormat;
 	swapChainExtent = surfaceExtent;
@@ -605,8 +619,6 @@ VkResult createSwapChain() {
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
  *			IMAGE VIEW CREATION
- *
- *
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
 extern VkImageView *swapChainImageViews;
@@ -632,6 +644,7 @@ VkResult createImageViews() {
 		imageViewCreateInfo.image = swapChainImages[i];
 		if ((result = vkCreateImageView(device, &imageViewCreateInfo, nullptr, swapChainImageViews + i)) < VK_SUCCESS) {
 			fprintf(stderr, "ERROR: vkCreateImageView exited with error code %d\n", result);
+			exit(result);
 		}
 	}
 	return result;
