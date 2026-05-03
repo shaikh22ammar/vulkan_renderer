@@ -651,22 +651,32 @@ VkResult createImageViews() {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 void initVulkan() {
-	VkResult result = VK_SUCCESS;
-	if ((result = createInstance()) < VK_SUCCESS) exit(RENDERER_ERROR_VULKAN_INIT);
-	else if (result > VK_SUCCESS) fprintf(stderr, "WARNING: createInstance returned %d\n", result);
+	constexpr int numFunctions = 6;
+	VkResult (*functionsToCall[numFunctions])() = {
+		createInstance,
+		createSurface,
+		pickPhysicalDevice, 
+		createLogicalDevice, 
+		createSwapChain, 
+		createImageViews
+	};
 
-	if ((result = createSurface()) < VK_SUCCESS) exit(RENDERER_ERROR_VULKAN_INIT);
-	else if (result > VK_SUCCESS) fprintf(stderr, "WARNING: createSurface returned %d\n", result);
+	char *functionsToCallNames[numFunctions] = {
+		"createInstance",
+		"createSurface",
+		"pickPhysicalDevice", 
+		"createLogicalDevice", 
+		"createSwapChain", 
+		"createImageViews"
+	};
 
-	if ((result = pickPhysicalDevice()) < VK_SUCCESS) exit(RENDERER_ERROR_VULKAN_INIT);
-	else if (result > VK_SUCCESS) fprintf(stderr, "WARNING: pickPhysicalDevice returned %d\n", result);
+	for (int i = 0; i < numFunctions; i++) {
+		VkResult result = VK_SUCCESS;
+		result = functionsToCall[i]();
+		if (result < VK_SUCCESS) 
+			exit(RENDERER_ERROR_VULKAN_INIT);
+		else if (result > VK_SUCCESS) 
+			fprintf(stderr, "WARNING: %s() returned %d\n", functionsToCallNames[i], result);
+	}
 
-	if ((result = createLogicalDevice()) < VK_SUCCESS) exit(RENDERER_ERROR_VULKAN_INIT);
-	else if (result > VK_SUCCESS) fprintf(stderr, "WARNING: createLogicalDevice returned %d\n", result);
-
-	if ((result = createSwapChain()) < VK_SUCCESS) exit(RENDERER_ERROR_VULKAN_INIT);
-	else if (result > VK_SUCCESS) fprintf(stderr, "WARNING: createSwapChain returned %d\n", result);
-
-	if ((result = createImageViews()) < VK_SUCCESS) exit(RENDERER_ERROR_VULKAN_INIT);
-	else if (result > VK_SUCCESS) fprintf(stderr, "WARNING: createImageViews returned %d\n", result);
 }
