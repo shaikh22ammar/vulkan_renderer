@@ -6,16 +6,24 @@ isDebug ?= true
 # Should Vulkan use portability extensions? (Required for Apple Silicon) 
 isMacOS ?= true
 
+# Packages paths
+comma := ,
+PKGS := vulkan glfw3
+PKGS_INFO := $(shell pkg-config --cflags --libs $(PKGS))
+PKGS_INC := $(filter -I%, $(PKGS_INFO))
+PKGS_LIB := $(filter -L%, $(PKGS_INFO)) $(filter -l%, $(PKGS_INFO))
+PKGS_RPATH := $(patsubst -L%, -Wl$(comma)-rpath$(comma)%, $(filter -L%, $(PKGS_LIB)))
+
 ### Compiler and linker commands
 
-CC = cc
+CC := cc
 
 CFLAGS = 
 CFLAGS += -Wall -Wextra -std=c23
 CFLAGS += -Wdouble-promotion -Wfloat-conversion
 CFLAGS += -MMD -MP
-CFLAGS += $(shell pkg-config --cflags vulkan)
-CFLAGS += $(shell pkg-config --cflags glfw3)
+CFLAGS += -Isrc
+CFLAGS += $(PKGS_INC)
 
 ifeq ($(isMacOS),true)
 CFLAGS += -DMAC_OS
@@ -28,11 +36,8 @@ CFLAGS += -O2 -DNDEBUG
 endif
 
 LDFLAGS =
-LDFLAGS += $(shell pkg-config --libs vulkan)
-LDFLAGS += $(shell pkg-config --libs glfw3)
 LDFLAGS += -lm
-LDFLAGS += -Wl,-rpath,$(shell pkg-config --variable=libdir glfw3)
-LDFLAGS += -Wl,-rpath,$(shell pkg-config --variable=libdir vulkan)
+LDFLAGS += $(PKGS_LIB) $(PKGS_RPATH)
 
 SC = slangc
 SCFLAGS = -target spirv -profile spirv_1_4 -emit-spirv-directly -fvk-use-entrypoint-name 
