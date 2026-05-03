@@ -54,7 +54,7 @@ DEPS = $(OBJS:.o=.d)
 SLANG_DIR = $(SRC_DIR)/shaders
 SLANG_SHADERS = $(wildcard $(SPV_DIR)/*.slang)
 
-SPV_DIR = $(SRC_DIR)/shaders
+SPV_DIR = $(BUILD_DIR)/shaders
 SPV_SHADERS = $(patsubst $(SLANG_DIR)/%, $(SPV_DIR)/%, $(SLANG_SHADERS:.slang=.spv))
 
 
@@ -68,7 +68,7 @@ $(TARGET): $(OBJS) | $(BUILD_DIR)
 $(OBJS_DIR)/%.o: $(SRC_DIR)/%.c $(SPV_SHADERS) | $(OBJS_DIR)
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-$(SLANG_DIR)/triangle.spv: $(SLANG_DIR)/triangle.slang | $(SPV_DIR)
+$(SPV_DIR)/triangle.spv: $(SLANG_DIR)/triangle.slang | $(SPV_DIR)
 	$(SC) $< $(SCFLAGS) -entry vertMain -entry fragMain -o $@
 
 $(BUILD_DIR):

@@ -1,20 +1,19 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#ifdef MAC_OS
-#include <vulkan/vulkan_beta.h>
-#endif
+#include "rendererErrors.h"
 
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
+// glfw
+uint32_t WIDTH = 800;
+uint32_t HEIGHT = 600;
 GLFWwindow *window = nullptr;
 
+// init vulkan
 VkInstance instance = nullptr;
 VkSurfaceKHR surface = nullptr;
 VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
@@ -28,6 +27,10 @@ VkSurfaceFormatKHR swapChainSurfaceFormat = {0};
 VkExtent2D swapChainExtent = {0};
 VkImageView *swapChainImageViews = nullptr;
 
+// graphics pipeline
+VkPipelineLayout pipelineLayout = nullptr;
+VkPipeline graphicsPipeline = nullptr;
+
 static void mainLoop() {
 	while(!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
@@ -35,6 +38,10 @@ static void mainLoop() {
 }
 
 static void cleanUp() {
+	// graphics pipeline
+	vkDestroyPipeline(device, graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+
 	// swapchain image views
 	for (uint32_t i = 0; i < swapChainImagesCount; i++) {
 		vkDestroyImageView(device, swapChainImageViews[i], nullptr);
@@ -63,18 +70,18 @@ static void cleanUp() {
 	glfwTerminate();
 }
 
-extern VkResult initWindow();
-extern VkResult initVulkan();
-extern void cleanUp();
+extern void initWindow();
+extern void initVulkan();
+extern void createGraphicsPipeline();
 static void run() {
-	if (initWindow() < VK_SUCCESS) goto cleanup;
-	if (initVulkan() < VK_SUCCESS) goto cleanup;
+	initWindow();
+	initVulkan();
+	createGraphicsPipeline();
 	mainLoop();
-cleanup:
 	cleanUp();
 }
 
 int main() {
 	run();
-	return EXIT_SUCCESS;
+	exit(RENDERER_SUCCESS);
 }

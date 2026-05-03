@@ -1,11 +1,11 @@
 #include "readFile.h"
 
-enum ReadFileResult readFile(char *filepath, char *buffer, size_t *pBufSize) {
+ReadFileResult readFile(const char *filepath, char *buffer, size_t *pBufSize) {
 	/* Reads the file in filepath in binary format
 	 * If buffer is empty, records the size of the file in pBufSize
 	 * Otherwise, at most pBufSize characters from the file is recorded into buffer 
 	 * */
-	enum ReadFileResult result = READ_FILE_SUCCESS;
+ 	ReadFileResult result = READ_FILE_SUCCESS;
 	FILE *file = fopen(filepath, "rb");
 	if (!file) {
 		// error in opening file

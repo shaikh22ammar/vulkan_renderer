@@ -11,7 +11,6 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
 
 #define GLFW_INCLUDE_VULKAN
@@ -21,6 +20,7 @@
 #include <vulkan/vulkan_beta.h>
 #endif
 
+#include "rendererErrors.h"
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
@@ -84,7 +84,6 @@ static VkResult checkExtensionSupport() {
 		if (!found) {
 			fprintf(stderr, "ERROR: Required extension %s is not supported\n", requiredInstanceExtensions[i]);
 			result = VK_ERROR_EXTENSION_NOT_PRESENT;
-			exit(result);
 		}
 	}
 
@@ -163,8 +162,7 @@ static VkResult createInstance() {
 	result = vkCreateInstance(&createInfo, nullptr, &instance);
 	if (result < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: vkCreateInstance failed with exit code: %d\n", result);
-		exit(result);
-		//goto failure;
+		goto failure;
 	}
 	free(requiredInstanceExtensions);
 	requiredInstanceExtensions = nullptr;
@@ -189,7 +187,6 @@ static VkResult createSurface() {
 	VkResult result;
 	if ((result = glfwCreateWindowSurface(instance, window, nullptr, &surface)) < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: glfwCreateWindowSurface exited with error code %d", result);
-		exit(result);
 	}
 	return result;
 }
@@ -234,12 +231,17 @@ static uint32_t isDeviceSuitable(VkPhysicalDevice currPhysicalDevice) {
 	deviceVulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 	deviceVulkan13Features.pNext = &deviceVulkanExtendedDynamicStateFeaturesEXT;
 
+	VkPhysicalDeviceVulkan11Features deviceVulkan11Features;
+	deviceVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+	deviceVulkan11Features.pNext = &deviceVulkan13Features;
+
 	VkPhysicalDeviceFeatures2 deviceFeatures;
 	deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-	deviceFeatures.pNext = &deviceVulkan13Features;
+	deviceFeatures.pNext = &deviceVulkan11Features;
 
 	vkGetPhysicalDeviceFeatures2(currPhysicalDevice, &deviceFeatures);
-	VkBool32 isAllFeaturesSupported = deviceVulkan13Features.dynamicRendering 
+	VkBool32 isAllFeaturesSupported = deviceVulkan11Features.shaderDrawParameters 
+		&& deviceVulkan13Features.dynamicRendering 
 		&& deviceVulkanExtendedDynamicStateFeaturesEXT.extendedDynamicState;
 
 	// check if requireds extensions are supported
@@ -327,12 +329,12 @@ static uint32_t isDeviceSuitable(VkPhysicalDevice currPhysicalDevice) {
 }
 
 extern VkPhysicalDevice physicalDevice;
-static VkBool32 pickPhysicalDevice() {
+static VkResult pickPhysicalDevice() {
 	uint32_t physicalDevicesCount = 0;
 	vkEnumeratePhysicalDevices(instance, &physicalDevicesCount, nullptr);
 	if (physicalDevicesCount == 0) {
 		fprintf(stderr, "ERROR: Unable to find any GPU with Vulkan support\n");
-		return VK_FALSE;
+		return VK_ERROR_INITIALIZATION_FAILED;
 	}
 	VkPhysicalDevice availablePhysicalDevices[physicalDevicesCount];
 	vkEnumeratePhysicalDevices(instance, &physicalDevicesCount, availablePhysicalDevices);
@@ -351,8 +353,7 @@ static VkBool32 pickPhysicalDevice() {
 	}
 	if (physicalDevice == VK_NULL_HANDLE) {
 		fprintf(stderr, "ERROR: Unable to find any suitable GPU");
-		exit(VK_ERROR_INCOMPATIBLE_DRIVER);
-		//return VK_FALSE;
+		return VK_ERROR_INITIALIZATION_FAILED;
 	}
 	VkPhysicalDeviceProperties2 chosenDeviceProperies;
 	chosenDeviceProperies.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
@@ -360,7 +361,7 @@ static VkBool32 pickPhysicalDevice() {
 	vkGetPhysicalDeviceProperties2(physicalDevice, &chosenDeviceProperies);
 	printf("Picked device %d: %s\n", chosenDeviceProperies.properties.deviceID, chosenDeviceProperies.properties.deviceName);
 	puts("");
-	return VK_TRUE;
+	return VK_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -392,8 +393,7 @@ static VkResult createLogicalDevice() {
 		fprintf(stderr, 
 			"ERROR: Failed allocating memory for finding queue families of device: %d\n",
 			deviceProperies.properties.deviceID);
-		exit(VK_ERROR_OUT_OF_HOST_MEMORY);
-		//return VK_ERROR_OUT_OF_HOST_MEMORY;
+		return VK_ERROR_OUT_OF_HOST_MEMORY;
 	}
 	for (uint32_t i = 0; i < queueFamiliesCount; i++) {
 		queueFamiliesProperties[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2;
@@ -419,8 +419,7 @@ static VkResult createLogicalDevice() {
 	if (!queueFamilyFound) {
 		result = VK_ERROR_INITIALIZATION_FAILED;
 		fprintf(stderr, "ERROR: No queue family found that supports both graphics and present commands.\n");
-		exit(VK_ERROR_INITIALIZATION_FAILED);
-		//return result;
+		return result;
 	}
 
 	// Specifying queues
@@ -443,9 +442,14 @@ static VkResult createLogicalDevice() {
 	deviceVulkan13Features.pNext = &deviceVulkanExtendedDynamicStateFeaturesEXT;
 	deviceVulkan13Features.dynamicRendering = VK_TRUE;
 
+	VkPhysicalDeviceVulkan11Features deviceVulkan11Features = {0};
+	deviceVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+	deviceVulkan11Features.pNext = &deviceVulkan13Features;
+	deviceVulkan11Features.shaderDrawParameters = VK_TRUE;
+
 	VkPhysicalDeviceFeatures2 deviceFeatures = {0};
 	deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-	deviceFeatures.pNext = &deviceVulkan13Features;
+	deviceFeatures.pNext = &deviceVulkan11Features;
 
 	// Creating logical device
 	VkDeviceCreateInfo deviceCreateInfo = {0};
@@ -458,8 +462,7 @@ static VkResult createLogicalDevice() {
 
 	if ((result = vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device)) < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: vkCreateDevice failed with exit code: %d\n", result);
-		exit(result);
-		//return result;
+		return result;
 	}
 
  	vkGetDeviceQueue(device, queueFamilyIndex, 0, &queue);
@@ -497,13 +500,11 @@ VkResult createSwapChain() {
 	if (!surfaceFormats) {
 		fprintf(stderr, "ERROR: Failed allocating memory for querying surface format\n");
 		result = VK_ERROR_OUT_OF_HOST_MEMORY;
-		exit(result);
-		//return result;
+		return result;
 	}
 	if((result = vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatsCount, surfaceFormats)) < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: vkGetPhysicalDeviceSurfaceFormatsKHR exited with error code %d\n", result);
-		exit(result);
-		//return result;
+		return result;
 	}
 	VkSurfaceFormatKHR surfaceFormat = surfaceFormats[0];
 	for (uint32_t i = 0; i < surfaceFormatsCount; i++) {
@@ -522,13 +523,11 @@ VkResult createSwapChain() {
 	if (!presentModes) {
 		fprintf(stderr, "ERROR: Failed allocating memory for querying present modes\n");
 		result = VK_ERROR_OUT_OF_HOST_MEMORY;
-		exit(result);
-		//return result;
+		return result;
 	}
 	if ((result = vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModesCount, presentModes)) < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: vkGetPhysicalDeviceSurfacePresentModesKHR exited with error code %d\n", result);
-		exit(result);
-		//return result;
+		return result;
 	}
 	VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
 	for (uint32_t i = 0; i < presentModesCount; i++) {
@@ -545,7 +544,6 @@ VkResult createSwapChain() {
 	VkExtent2D surfaceExtent = surfaceCapabilities.currentExtent;
 	if ((result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCapabilities)) < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: vkGetPhysicalDeviceSurfaceCapabilitiesKHR exited with error code %d\n", result);
-		exit(result);
 		return result;
 	}
 	if (surfaceCapabilities.currentExtent.width < ~0U && surfaceCapabilities.currentExtent.width > 0U) {
@@ -591,8 +589,7 @@ VkResult createSwapChain() {
 
 	if ((result = vkCreateSwapchainKHR(device, &swapChainCreateInfo, nullptr, &swapChain)) < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: vkCreateSwapchainKHR exited with error code %d\n", result);
-		exit(result);
-		//return result;
+		return result;
 	}
 
 	// Creating swap chain images array
@@ -601,13 +598,11 @@ VkResult createSwapChain() {
 	if (!swapChainImages) {
 		fprintf(stderr, "ERROR: Failed allocating memory for swap chain images.\n");
 		result = VK_ERROR_OUT_OF_HOST_MEMORY;
-		exit(result);
-		//return result;
+		return result;
 	}
 	if ((result = vkGetSwapchainImagesKHR(device, swapChain, &swapChainImagesCount, swapChainImages)) < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: vkGetSwapchainImagesKHR exited with error code %d\n", result);
-		exit(result);
-		//return result;
+		return result;
 	}
 	swapChainSurfaceFormat = surfaceFormat;
 	swapChainExtent = surfaceExtent;
@@ -655,13 +650,23 @@ VkResult createImageViews() {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-VkResult initVulkan() {
+void initVulkan() {
 	VkResult result = VK_SUCCESS;
-	if ((result = createInstance()) < VK_SUCCESS) return result;
-	if ((result = createSurface()) < VK_SUCCESS) return result;
-	if ((result = pickPhysicalDevice()) < VK_SUCCESS) return result;
-	if ((result = createLogicalDevice()) < VK_SUCCESS) return result;
-	if ((result = createSwapChain()) < VK_SUCCESS) return result;
-	if ((result = createImageViews()) < VK_SUCCESS) return result;
-	return result;
+	if ((result = createInstance()) < VK_SUCCESS) exit(RENDERER_ERROR_VULKAN_INIT);
+	else if (result > VK_SUCCESS) fprintf(stderr, "WARNING: createInstance returned %d\n", result);
+
+	if ((result = createSurface()) < VK_SUCCESS) exit(RENDERER_ERROR_VULKAN_INIT);
+	else if (result > VK_SUCCESS) fprintf(stderr, "WARNING: createSurface returned %d\n", result);
+
+	if ((result = pickPhysicalDevice()) < VK_SUCCESS) exit(RENDERER_ERROR_VULKAN_INIT);
+	else if (result > VK_SUCCESS) fprintf(stderr, "WARNING: pickPhysicalDevice returned %d\n", result);
+
+	if ((result = createLogicalDevice()) < VK_SUCCESS) exit(RENDERER_ERROR_VULKAN_INIT);
+	else if (result > VK_SUCCESS) fprintf(stderr, "WARNING: createLogicalDevice returned %d\n", result);
+
+	if ((result = createSwapChain()) < VK_SUCCESS) exit(RENDERER_ERROR_VULKAN_INIT);
+	else if (result > VK_SUCCESS) fprintf(stderr, "WARNING: createSwapChain returned %d\n", result);
+
+	if ((result = createImageViews()) < VK_SUCCESS) exit(RENDERER_ERROR_VULKAN_INIT);
+	else if (result > VK_SUCCESS) fprintf(stderr, "WARNING: createImageViews returned %d\n", result);
 }

@@ -13,3 +13,5 @@ compile_commands.json
 # Junk
 .DS_Store
 /.cache/
+
+reminder.txt
