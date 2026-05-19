@@ -3,10 +3,43 @@
 
 typedef enum {
 	RENDERER_SUCCESS,
+	RENDERER_ERROR_OUT_OF_MEMORY,
 	RENDERER_ERROR_GLFW,
 	RENDERER_ERROR_VULKAN_INIT,
-	RENDERER_ERROR_GRAPHICS_PIPELINE
+	RENDERER_ERROR_GRAPHICS_PIPELINE,
+	RENDERER_ERROR_COMMAND_POOL,
+	RENDERER_ERROR_DRAW,
+	RENDERER_ERROR_INVALID_SHADER
 } RendererExitCode;
 
-char *rendererPrintError(RendererExitCode e);
+static inline const char *rendererPrintError(RendererExitCode e) {
+	switch (e) {
+		case RENDERER_SUCCESS:
+			return "RENDERER_SUCCESS";
+			break;
+		case RENDERER_ERROR_OUT_OF_MEMORY:
+			return "RENDERER_ERROR_OUT_OF_MEMORY";
+			break;
+		case RENDERER_ERROR_GLFW:
+			return "RENDERER_ERROR_GLFW";
+			break;
+		case RENDERER_ERROR_VULKAN_INIT:
+			return "RENDERER_ERROR_VULKAN_INIT";
+			break;
+		case RENDERER_ERROR_GRAPHICS_PIPELINE:
+			return "RENDERER_ERROR_GRAPHICS_PIPELINE";
+			break;
+		case RENDERER_ERROR_COMMAND_POOL:
+			return "RENDERER_ERROR_COMMAND_POOL";
+			break;
+		case RENDERER_ERROR_DRAW:
+			return "RENDERER_ERROR_DRAW";
+			break;
+		case RENDERER_ERROR_INVALID_SHADER:
+			return "RENDERER_ERROR_INVALID_SHADER";
+			break;
+		default:
+			return "Unknown error";
+	}
+}
 #endif

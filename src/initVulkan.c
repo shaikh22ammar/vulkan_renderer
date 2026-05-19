@@ -99,16 +99,19 @@ static VkResult createInstance() {
 	VkResult result = VK_SUCCESS;
 
 	// Checking validation layer support
-	if (enableValidationLayers) {
-		VkResult result = checkValidationLayerSupport();
-		if (result < VK_SUCCESS) return result;
-	}
+#ifndef NDEBUG
+	result = checkValidationLayerSupport();
+	if (result < VK_SUCCESS) return result;
+#endif
 
 	// Finding required extensions for glfw
 	uint32_t glfwExtensionCount = 0;
 	const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
 	requiredInstanceExtensionsCount = glfwExtensionCount;
+#ifndef NDEBUG
+	requiredInstanceExtensionsCount++;
+#endif
 	// portability extension is required for MoltenVk
 #ifdef MAC_OS 
 	requiredInstanceExtensionsCount++;
@@ -125,8 +128,14 @@ static VkResult createInstance() {
 		printf("%s, ", requiredInstanceExtensions[i]);
 	}
 #ifdef MAC_OS
-	requiredInstanceExtensions[requiredInstanceExtensionsCount - 1] = VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME;
+	if (!enableValidationLayers)
+		requiredInstanceExtensions[requiredInstanceExtensionsCount - 1] = VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME;
+	else
+		requiredInstanceExtensions[requiredInstanceExtensionsCount - 2] = VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME;
 	printf("%s\n", VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#endif
+#ifndef NDEBUG
+	requiredInstanceExtensions[requiredInstanceExtensionsCount - 1] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
 #endif
 
 	// Checking for extension support
@@ -176,6 +185,53 @@ failure:
 	return result;
 }
 
+/* Debug */
+VkResult createDebugUtilsMessengerEXT(
+		const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, 
+		const VkAllocationCallbacks* pAllocator,
+		VkDebugUtilsMessengerEXT* pDebugMessenger) {
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+    } else {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+
+
+}
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+	[[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	[[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT messageType,
+	[[maybe_unused]] const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+	[[maybe_unused]] void* pUserData) {
+
+	fprintf(stderr, "validation layer: %s\n", pCallbackData->pMessage);
+
+	return VK_FALSE;
+}
+
+extern VkDebugUtilsMessengerEXT debugMessenger;
+VkResult setupDebugMessenger() {
+	if (!enableValidationLayers) return VK_SUCCESS;
+	VkDebugUtilsMessengerCreateInfoEXT createInfo = {0};
+	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+	createInfo.messageSeverity = 
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT 
+		| VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT 
+		| VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+	createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT 
+		| VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT 
+		| VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+	createInfo.pfnUserCallback = debugCallback;
+	createInfo.pUserData = nullptr; // Optional
+	
+	return createDebugUtilsMessengerEXT(&createInfo, nullptr, &debugMessenger);
+}
+
+
+
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
  *			SURFACE CREATION
@@ -184,6 +240,7 @@ failure:
 extern GLFWwindow *window;
 extern VkSurfaceKHR surface;
 static VkResult createSurface() {
+	/* The window system Vulkan is abstracted away by a VkSurface. */
 	VkResult result;
 	if ((result = glfwCreateWindowSurface(instance, window, nullptr, &surface)) < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: glfwCreateWindowSurface exited with error code %d", result);
@@ -242,6 +299,7 @@ static uint32_t isDeviceSuitable(VkPhysicalDevice currPhysicalDevice) {
 	vkGetPhysicalDeviceFeatures2(currPhysicalDevice, &deviceFeatures);
 	VkBool32 isAllFeaturesSupported = deviceVulkan11Features.shaderDrawParameters 
 		&& deviceVulkan13Features.dynamicRendering 
+		&& deviceVulkan13Features.synchronization2
 		&& deviceVulkanExtendedDynamicStateFeaturesEXT.extendedDynamicState;
 
 	// check if requireds extensions are supported
@@ -371,6 +429,7 @@ static VkResult pickPhysicalDevice() {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
 extern VkDevice device;
 extern VkQueue queue; 
+extern uint32_t queueFamilyIndex;
 static VkResult createLogicalDevice() {
 	/* Creates the logical device.
 	 * Finds the queue family that supports both graphics and present command, initializes queue with that
@@ -384,7 +443,6 @@ static VkResult createLogicalDevice() {
 	deviceProperies.pNext = nullptr;
 	vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperies);
 
-	uint32_t queueFamilyIndex = ~0U;
 	VkBool32 queueFamilyFound = VK_FALSE;
 	uint32_t queueFamiliesCount;
 	vkGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, &queueFamiliesCount, nullptr);
@@ -441,6 +499,7 @@ static VkResult createLogicalDevice() {
 	deviceVulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 	deviceVulkan13Features.pNext = &deviceVulkanExtendedDynamicStateFeaturesEXT;
 	deviceVulkan13Features.dynamicRendering = VK_TRUE;
+	deviceVulkan13Features.synchronization2 = VK_TRUE;
 
 	VkPhysicalDeviceVulkan11Features deviceVulkan11Features = {0};
 	deviceVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
@@ -488,12 +547,14 @@ VkResult createSwapChain() {
 	 * Format B8G8R8_SRGB, color space SRGB Nonlinear
 	 * if supported, otherwise falls back to format that comes first.
 	 *
-	 * Present mode is chosen as Mailbox, but falls back to fifo if not supported.
+	 * Present mode is chosen as Mailbox, but falls back to fifo relaxed if not supported,
+	 * unless debug mode is on, in which case, it's always fifo.
 	 * */
 
 
 	// Choosing surface format
 	VkResult result = VK_SUCCESS;
+	/* We need to choose the format of the surface: colorspace and bit depth format */
 	uint32_t surfaceFormatsCount;
 	vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatsCount, nullptr);
 	VkSurfaceFormatKHR *surfaceFormats = malloc(sizeof(VkSurfaceFormatKHR)*surfaceFormatsCount);
@@ -517,6 +578,7 @@ VkResult createSwapChain() {
 	surfaceFormats = nullptr;
 
 	// Choosing present modes
+	/* Present modes state what should be done when application and monitor refresh rate is out of sync */
 	uint32_t presentModesCount;
 	vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModesCount, nullptr);
 	VkPresentModeKHR *presentModes = malloc(sizeof(VkPresentModeKHR)*presentModesCount);
@@ -530,34 +592,40 @@ VkResult createSwapChain() {
 		return result;
 	}
 	VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
+#ifdef NDEBUG
 	for (uint32_t i = 0; i < presentModesCount; i++) {
 		if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
 			presentMode = presentModes[i];
 			break;
 		}
 	}
+#endif
 	free(presentModes);
 	presentModes = nullptr;
 
 	// Choosing swap extent
+	/* We need to state the extent of the surface (dimension) 
+	 * By default, it would be the extent of the window,
+	 * but if the width is ~0U, it needs to be specified */
 	VkSurfaceCapabilitiesKHR surfaceCapabilities;
-	VkExtent2D surfaceExtent = surfaceCapabilities.currentExtent;
 	if ((result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCapabilities)) < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: vkGetPhysicalDeviceSurfaceCapabilitiesKHR exited with error code %d\n", result);
 		return result;
 	}
-	if (surfaceCapabilities.currentExtent.width < ~0U && surfaceCapabilities.currentExtent.width > 0U) {
-		int windowWidth, windowHeight;
-		glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
-		uint32_t w = surfaceCapabilities.currentExtent.width;
-		w = w > surfaceCapabilities.maxImageExtent.width ? surfaceCapabilities.maxImageExtent.width : w;
-		w = w < surfaceCapabilities.minImageExtent.width ? surfaceCapabilities.minImageExtent.width : w;
+	VkExtent2D surfaceExtent = surfaceCapabilities.currentExtent;
+	if (true) {//surfaceCapabilities.currentExtent.width == ~0U) {
+		int w, h;
+		glfwGetFramebufferSize(window, &w, &h);
+		w = (uint32_t) w > surfaceCapabilities.maxImageExtent.width ? surfaceCapabilities.maxImageExtent.width : w;
+		w = (uint32_t) w < surfaceCapabilities.minImageExtent.width ? surfaceCapabilities.minImageExtent.width : w;
 		surfaceExtent.width = w;
-		uint32_t h = surfaceCapabilities.currentExtent.height;
-		h = h > surfaceCapabilities.maxImageExtent.height ? surfaceCapabilities.maxImageExtent.height : h;
-		h = h < surfaceCapabilities.minImageExtent.height ? surfaceCapabilities.minImageExtent.height : h;
+		h = (uint32_t) h > surfaceCapabilities.maxImageExtent.height ? surfaceCapabilities.maxImageExtent.height : h;
+		h = (uint32_t) h < surfaceCapabilities.minImageExtent.height ? surfaceCapabilities.minImageExtent.height : h;
 		surfaceExtent.height = h;
 	}
+	/* We need to specify the minimum number of images that would be
+	 * buffered in the swapchain.
+	 * Excepting edge cases, we choose 3 */
 	uint32_t minImageCount = surfaceCapabilities.minImageCount < 3U ? surfaceCapabilities.minImageCount : 3U;
 	if (0 < surfaceCapabilities.maxImageCount && surfaceCapabilities.maxImageCount < 3U)
 		minImageCount = surfaceCapabilities.maxImageCount;
@@ -572,6 +640,8 @@ VkResult createSwapChain() {
 	swapChainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
 	swapChainCreateInfo.imageExtent = surfaceExtent;
 	swapChainCreateInfo.imageArrayLayers = 1U;
+				/* Specifies the number of stereoscopic views. 
+				 * For our purpose it is 1 */
 	swapChainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; 
 				/* specifies that the image can be 
 				 * used to create a VkImageView suitable for use as a color */
@@ -618,6 +688,9 @@ VkResult createSwapChain() {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
 extern VkImageView *swapChainImageViews;
 VkResult createImageViews() {
+	/* Image view determine how to actually interpret the image
+	 * irregardless of its format. For our purpose of swapchains,
+	 * we want interpretation to be same as the format */
 	VkResult result = VK_SUCCESS;
 	VkImageViewCreateInfo imageViewCreateInfo = {0};
 	imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -625,6 +698,8 @@ VkResult createImageViews() {
 	imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 	imageViewCreateInfo.format = swapChainSurfaceFormat.format;
 	imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				/* This means we only want the color of the image as 
+				 * opposed to depth and other aspects */
 	imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
 	imageViewCreateInfo.subresourceRange.levelCount = 1;
 	imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
@@ -651,9 +726,10 @@ VkResult createImageViews() {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 void initVulkan() {
-	constexpr int numFunctions = 6;
-	VkResult (*functionsToCall[numFunctions])() = {
+	constexpr int numFunctions = 7;
+	VkResult (*functionsToCall[numFunctions])(void) = {
 		createInstance,
+		setupDebugMessenger,
 		createSurface,
 		pickPhysicalDevice, 
 		createLogicalDevice, 
@@ -661,8 +737,9 @@ void initVulkan() {
 		createImageViews
 	};
 
-	char *functionsToCallNames[numFunctions] = {
+	const char *functionsToCallNames[numFunctions] = {
 		"createInstance",
+		"setupDebugMessenger",
 		"createSurface",
 		"pickPhysicalDevice", 
 		"createLogicalDevice", 
@@ -673,9 +750,10 @@ void initVulkan() {
 	for (int i = 0; i < numFunctions; i++) {
 		VkResult result = VK_SUCCESS;
 		result = functionsToCall[i]();
-		if (result < VK_SUCCESS) 
+		if (result < VK_SUCCESS) {
+			fprintf(stderr, "ERROR: %s() returned %d\n", functionsToCallNames[i], result);
 			exit(RENDERER_ERROR_VULKAN_INIT);
-		else if (result > VK_SUCCESS) 
+		} else if (result > VK_SUCCESS) 
 			fprintf(stderr, "WARNING: %s() returned %d\n", functionsToCallNames[i], result);
 	}
 

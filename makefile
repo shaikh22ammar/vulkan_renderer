@@ -31,8 +31,9 @@ endif
 
 ifeq ($(isDebug),true)
 CFLAGS += -O0 -g
+LFLAGS += -g
 else
-CFLAGS += -O2 -DNDEBUG
+CFLAGS += -O3 -DNDEBUG
 endif
 
 LDFLAGS =

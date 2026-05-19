@@ -1,3 +1,18 @@
+/* 
+ * GPUs are essentially massive state machines.
+ * How the commands that we pass behave depend on the state (a collection of variables, information, etc.).
+ * Different "work" (rasterization, compute, raytracing, etc.) require different state variables.
+ * These different "work" need different blueprint of variables to describe the state.
+ * For example, a rasterization work would involve a variable describing the multisampling behaviour,
+ * but that does not make sense in a compute work.
+ * The different blueprints are called pipelines, not to be confused with pipeline stages.
+ * We will only work with the rasterization/graphics pipeline,
+ * for which we need to create a graphics pipeline explictly stating the state.
+ * For viewport and scissor, we will specify a dynamic state meaning
+ * that commands we pass will specify/modify the state 
+ * */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "readFile.h"
@@ -13,6 +28,11 @@ extern VkPipelineLayout pipelineLayout;
 extern VkPipeline graphicsPipeline;
 
 VkResult createShaderModule(const uint32_t *shaderCode, const size_t shaderCodeSize, VkShaderModule *shaderModule) {
+	// shader code needs to be 32 bit aligned
+	if ((uint64_t) shaderCode % 4 != 0) {
+		return VK_ERROR_INVALID_SHADER_NV;
+	}
+
 	VkShaderModuleCreateInfo createInfo = {0};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	createInfo.pNext = nullptr;
@@ -21,7 +41,7 @@ VkResult createShaderModule(const uint32_t *shaderCode, const size_t shaderCodeS
 	return vkCreateShaderModule(device, &createInfo, nullptr, shaderModule);
 }
 
-void createGraphicsPipeline() {
+void initGraphicsPipeline() {
 	char *filepath = SHADER_DIR "triangle.spv";
 	uint32_t *shaderCode = nullptr;
 	size_t shaderCodeSize = 0;
@@ -74,7 +94,8 @@ void createGraphicsPipeline() {
 
 	VkPipelineShaderStageCreateInfo shaderStages[shaderStagesCount] = {vertShaderStageInfo, fragShaderStageInfo};
 
-	// Dynamic states and viewports
+	// Dynamic states
+	// Viewport and scissors are set to be dynamic
 	constexpr int dynamicStatesCount = 2;
 	VkDynamicState dynamicStates[dynamicStatesCount] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 
@@ -84,19 +105,6 @@ void createGraphicsPipeline() {
 	dynamicStatesCreateInfo.dynamicStateCount = dynamicStatesCount;
 	dynamicStatesCreateInfo.pDynamicStates = dynamicStates;
 
-	/*
-	VkViewport viewport = {0};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.height = (float) swapChainExtent.height;
-	viewport.width = (float) swapChainExtent.width;
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-
-	VkRect2D scissor = {0};
-	scissor.offset = (VkOffset2D) {.x = 0, .y = 0};
-	scissor.extent = swapChainExtent;
-	*/
 	VkPipelineViewportStateCreateInfo viewportStateCreateInfo = {0};
 	viewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	viewportStateCreateInfo.pNext = nullptr;
@@ -122,7 +130,7 @@ void createGraphicsPipeline() {
 	rasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
 	rasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
 	rasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
-	rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_NONE;
 	rasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizationStateCreateInfo.depthBiasEnable = VK_FALSE;
 	rasterizationStateCreateInfo.lineWidth = 1.0f;
@@ -135,8 +143,15 @@ void createGraphicsPipeline() {
 	multisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
 
 	// color blending
+	// After a fragment shader has returned a color, it needs to be combined with the color that is already in the framebuffer. 
 	VkPipelineColorBlendAttachmentState colorBlendAttachmentState = {0};
-	colorBlendAttachmentState.blendEnable = VK_FALSE;
+	colorBlendAttachmentState.blendEnable = VK_TRUE;
+	colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+	colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+	colorBlendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
+	colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+	colorBlendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+	colorBlendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
 	colorBlendAttachmentState.colorWriteMask = 
 				 	  VK_COLOR_COMPONENT_R_BIT 
 					| VK_COLOR_COMPONENT_G_BIT
@@ -159,8 +174,8 @@ void createGraphicsPipeline() {
 	pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
 
 	VkResult pipelineLayoutCreationResult;
-	if ((pipelineLayoutCreationResult = vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout)) 
-			< VK_SUCCESS) {
+	pipelineLayoutCreationResult = vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout); 
+	if (pipelineLayoutCreationResult < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: vkCreatePipelineLayout() returned %d\n", pipelineLayoutCreationResult);
 		exit(RENDERER_ERROR_GRAPHICS_PIPELINE);
 	} else if (pipelineLayoutCreationResult > VK_SUCCESS) {
@@ -176,6 +191,7 @@ void createGraphicsPipeline() {
 
 	VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {0};
 	graphicsPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+					// This is needed since render pass is not used
 	graphicsPipelineCreateInfo.pNext = &pipelineRenderingCreateInfo;
 	graphicsPipelineCreateInfo.stageCount = shaderStagesCount;
 	graphicsPipelineCreateInfo.pStages = shaderStages;
@@ -190,7 +206,13 @@ void createGraphicsPipeline() {
 	graphicsPipelineCreateInfo.renderPass = nullptr;
 
 	VkResult graphicsPipelineCreationResult;
-	graphicsPipelineCreationResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &graphicsPipelineCreateInfo, nullptr, &graphicsPipeline);
+	graphicsPipelineCreationResult = vkCreateGraphicsPipelines(
+			device, 
+			VK_NULL_HANDLE, // pipeline cache
+			1, // number of pipeline createe info
+			&graphicsPipelineCreateInfo,  
+			nullptr, // allocation callbacks 
+			&graphicsPipeline);
 	
 	if (graphicsPipelineCreationResult < VK_SUCCESS) {
 		fprintf(stderr, "ERROR: vkCreateGraphicssPipelines() returned %d\n", graphicsPipelineCreationResult);
