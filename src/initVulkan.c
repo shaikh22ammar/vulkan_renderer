@@ -187,7 +187,7 @@ failure:
 }
 
 /* Debug */
-VkResult createDebugUtilsMessengerEXT(
+static VkResult createDebugUtilsMessengerEXT(
 		const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, 
 		const VkAllocationCallbacks* pAllocator,
 		VkDebugUtilsMessengerEXT* pDebugMessenger) {
@@ -213,7 +213,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 }
 
 extern VkDebugUtilsMessengerEXT debugMessenger;
-VkResult setupDebugMessenger() {
+static VkResult setupDebugMessenger() {
 	if (!enableValidationLayers) return VK_SUCCESS;
 	VkDebugUtilsMessengerCreateInfoEXT createInfo = {0};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -230,7 +230,12 @@ VkResult setupDebugMessenger() {
 	return createDebugUtilsMessengerEXT(&createInfo, nullptr, &debugMessenger);
 }
 
-
+void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
+	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+	if (func != nullptr) {
+		func(instance, debugMessenger, pAllocator);
+	}
+}
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

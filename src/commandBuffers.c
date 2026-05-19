@@ -3,14 +3,18 @@
 #include <vulkan/vulkan_core.h>
 #include "rendererErrors.h"
 
+#include "constants.h"
+
 extern VkDevice device;
 extern uint32_t queueFamilyIndex;
 extern VkCommandPool commandPool;
-extern VkCommandBuffer commandBuffer;
+extern VkCommandBuffer *pCommandBuffers;
 extern VkImage *swapChainImages;
 extern VkImageView *swapChainImageViews;
 extern VkExtent2D swapChainExtent;
 extern VkPipeline graphicsPipeline;
+
+extern unsigned int currentFrameInFlight;
 
 static VkResult createCommandPool() {
 	/* Command pools are allocators for command buffers.
@@ -37,9 +41,11 @@ static VkResult createCommandBuffer() {
 	commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	commandBufferAllocateInfo.pNext = nullptr;
 	commandBufferAllocateInfo.commandPool = commandPool;
-	commandBufferAllocateInfo.commandBufferCount = 1;
+	commandBufferAllocateInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 	commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	result = vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, &commandBuffer);
+	pCommandBuffers = malloc(sizeof(VkCommandBuffer) * MAX_FRAMES_IN_FLIGHT);
+	if (!pCommandBuffers) return VK_ERROR_OUT_OF_HOST_MEMORY;
+	result = vkAllocateCommandBuffers(device, &commandBufferAllocateInfo, pCommandBuffers);
 
 	return result;
 }
@@ -59,6 +65,7 @@ static void transitionImageLayout(
 
 	/* This function records an image transition in
 	 * the command buffer */
+	VkCommandBuffer commandBuffer = pCommandBuffers[currentFrameInFlight];
 	VkImageMemoryBarrier2 imageMemoryBarrier = {0};
 	imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
 	imageMemoryBarrier.pNext = nullptr;
@@ -89,6 +96,8 @@ static void transitionImageLayout(
 }
 
 VkResult recordCommandBuffer(uint32_t imageIndex) {
+	VkCommandBuffer commandBuffer = pCommandBuffers[currentFrameInFlight];
+	vkResetCommandBuffer(commandBuffer, 0);
 	VkCommandBufferBeginInfo commandBufferBeginInfo = {0};
 	commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	commandBufferBeginInfo.pNext = nullptr;
