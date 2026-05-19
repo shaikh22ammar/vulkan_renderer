@@ -9,6 +9,8 @@
 
 #include "rendererErrors.h"
 
+constexpr unsigned int MAX_FRAMES_IN_FLIGHT = 2;
+
 // glfw
 uint32_t WIDTH = 800;
 uint32_t HEIGHT = 600;
@@ -51,6 +53,7 @@ static void mainLoop() {
 		glfwPollEvents();
 		drawFrame();
 	}
+	vkDeviceWaitIdle(device);
 }
 
 static void cleanUp() {
@@ -85,6 +88,7 @@ static void cleanUp() {
 	surface = nullptr;
 
 	// instance
+	vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 	vkDestroyInstance(instance, nullptr);
 	instance = nullptr;
 
