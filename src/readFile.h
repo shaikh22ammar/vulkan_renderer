@@ -1,4 +1,6 @@
+#include "rendererErrors.h"
 #include <stdio.h>
+#include <stdlib.h>
 #ifndef READ_FILE_H
 #define READ_FILE_H
 
@@ -15,5 +17,15 @@ ReadFileResult readFile(const char *filepath, char *buffer, size_t *pBufSize);
  * If buffer is empty, records the size of the file in pBufSize
  * Otherwise, at most pBufSize characters from the file is recorded into buffer 
  * */
+
+static inline void handleReadFileError(const ReadFileResult result, const bool exitIfError) {
+	if (result < READ_FILE_SUCCESS) {
+		fprintf(stderr, "READ FILE ERROR: %d\n", result);
+		if (exitIfError) exit(RENDERER_ERROR_IO);
+	} else if (result > READ_FILE_SUCCESS) {
+		fprintf(stderr, "READ FILE WARNING: %d\n", result);
+	}
+}
+
 
 #endif

@@ -46,32 +46,20 @@ void initGraphicsPipeline() {
 	uint32_t *shaderCode = nullptr;
 	size_t shaderCodeSize = 0;
 	ReadFileResult shaderCodeReadingResult;
-	if ((shaderCodeReadingResult = readFile(filepath, nullptr, &shaderCodeSize)) < READ_FILE_SUCCESS) {
-		fprintf(stderr, "ERROR: readFile() exited with error code: %d\n", shaderCodeReadingResult);
-		exit(RENDERER_ERROR_GRAPHICS_PIPELINE);
-	} else if (shaderCodeReadingResult > READ_FILE_SUCCESS) {
-		fprintf(stderr, "WARNING: readFile() returned %d\n", shaderCodeReadingResult);
-	}
+	shaderCodeReadingResult = readFile(filepath, nullptr, &shaderCodeSize);
+	handleReadFileError(shaderCodeReadingResult, true);
 	shaderCode = malloc(sizeof(char)*shaderCodeSize);
 	if (!shaderCode) {
 		fprintf(stderr, "ERROR: Failed to allocated memory for shader code\n");
-		exit(RENDERER_ERROR_GRAPHICS_PIPELINE);
+		exit(RENDERER_ERROR_OUT_OF_MEMORY);
 	}
-	if ((shaderCodeReadingResult = readFile(filepath, (char *) shaderCode, &shaderCodeSize)) < READ_FILE_SUCCESS) {
-		fprintf(stderr, "ERROR: readFile() exited with error code: %d\n", shaderCodeReadingResult);
-		exit(RENDERER_ERROR_GRAPHICS_PIPELINE);
-	} else if (shaderCodeReadingResult > READ_FILE_SUCCESS) {
-		fprintf(stderr, "WARNING: readFile() returned %d\n", shaderCodeReadingResult);
-	}
+	shaderCodeReadingResult = readFile(filepath, (char *) shaderCode, &shaderCodeSize);
+	handleReadFileError(shaderCodeReadingResult, true);
 
 	VkShaderModule shaderModule;
 	VkResult shaderModuleCreationResult;
-	if ((shaderModuleCreationResult = createShaderModule(shaderCode, shaderCodeSize, &shaderModule)) < VK_SUCCESS) {
-		fprintf(stderr, "ERROR: vkCreateShaderModule() returned error code %d\n", shaderCodeReadingResult);
-		exit(RENDERER_ERROR_GRAPHICS_PIPELINE);
-	} else if (shaderModuleCreationResult > VK_SUCCESS) {
-		fprintf(stderr, "WARNING: vkCreateShaderModule() returned %d\n", shaderModuleCreationResult);
-	}
+	shaderModuleCreationResult = createShaderModule(shaderCode, shaderCodeSize, &shaderModule);
+	handleVulkanError(shaderModuleCreationResult, "createShaderModule", true);
 	free(shaderCode);
 	shaderCode = nullptr;
 
@@ -130,8 +118,8 @@ void initGraphicsPipeline() {
 	rasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
 	rasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
 	rasterizationStateCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
-	rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_NONE;
-	rasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterizationStateCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	rasterizationStateCreateInfo.depthBiasEnable = VK_FALSE;
 	rasterizationStateCreateInfo.lineWidth = 1.0f;
 
@@ -175,12 +163,7 @@ void initGraphicsPipeline() {
 
 	VkResult pipelineLayoutCreationResult;
 	pipelineLayoutCreationResult = vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout); 
-	if (pipelineLayoutCreationResult < VK_SUCCESS) {
-		fprintf(stderr, "ERROR: vkCreatePipelineLayout() returned %d\n", pipelineLayoutCreationResult);
-		exit(RENDERER_ERROR_GRAPHICS_PIPELINE);
-	} else if (pipelineLayoutCreationResult > VK_SUCCESS) {
-		fprintf(stderr, "WARNING: vkCreatePipelineLayout() returned %d\n", pipelineLayoutCreationResult);
-	}
+	handleVulkanError(pipelineLayoutCreationResult, "vkCreatePipelineLayout", true);
 
 	// create graphics pipeline
 	VkPipelineRenderingCreateInfo pipelineRenderingCreateInfo = {0};
@@ -213,13 +196,6 @@ void initGraphicsPipeline() {
 			&graphicsPipelineCreateInfo,  
 			nullptr, // allocation callbacks 
 			&graphicsPipeline);
-	
-	if (graphicsPipelineCreationResult < VK_SUCCESS) {
-		fprintf(stderr, "ERROR: vkCreateGraphicssPipelines() returned %d\n", graphicsPipelineCreationResult);
-		exit(RENDERER_ERROR_GRAPHICS_PIPELINE);
-	} else if (graphicsPipelineCreationResult > VK_SUCCESS) {
-		fprintf(stderr, "WARNING: vkCreateGraphicsPipeline() returned %d\n", graphicsPipelineCreationResult);
-	}
-
+	handleVulkanError(graphicsPipelineCreationResult, "vkCreateGraphicsPipelines", true);
 	vkDestroyShaderModule(device, shaderModule, nullptr);
 }

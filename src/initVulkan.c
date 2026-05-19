@@ -1,13 +1,3 @@
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *
- *			VULKAN INTIALIZATION
- *
- * 		Baisc vulkan boilerplate: instance and device creation.
- *
- *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
-
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,58 +12,64 @@
 
 #include "rendererErrors.h"
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *
- *			INSTANCE CREATION
- *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */	
 
-#ifdef NDEBUG // Disable validation if debug mode is not set 
+/* enable validation layers if in debug mode */
+#ifdef NDEBUG 
 constexpr VkBool32 enableValidationLayers = VK_FALSE;
 #else
 constexpr VkBool32 enableValidationLayers = VK_TRUE;
 #endif
+
 static constexpr uint32_t validationLayersCount = 1;
 static const char *validationLayers[validationLayersCount] = {"VK_LAYER_KHRONOS_validation"};
-static VkResult checkValidationLayerSupport() {
+static uint32_t checkValidationLayerSupport() {
 	/* Checks if the validation layers in the 
 	 * global validationLayers is supported */
-	VkResult result = VK_SUCCESS;
+	/* Returns the index of the layer not present */
+	VkResult result;
 
 	uint32_t supportedLayersNum = 0;
-	vkEnumerateInstanceLayerProperties(&supportedLayersNum, nullptr);
+	result = vkEnumerateInstanceLayerProperties(&supportedLayersNum, nullptr);
+	handleVulkanError(result, "vkEnumerateInstanceLayerProperties", true);
 	VkLayerProperties supportedLayers[supportedLayersNum];
-	vkEnumerateInstanceLayerProperties(&supportedLayersNum, supportedLayers);
+	result = vkEnumerateInstanceLayerProperties(&supportedLayersNum, supportedLayers);
+	handleVulkanError(result, "vkEnumerateInstanceLayerProperties", true);
 
-	for (uint32_t i = 0; i < validationLayersCount; i++) {
+	uint32_t i;
+	for (i = 0; i < validationLayersCount; i++) {
 		VkBool32 found = VK_FALSE;
 		for (uint32_t j = 0; j < supportedLayersNum; j++) {
 			if (strcmp(validationLayers[i], supportedLayers[j].layerName) == 0) {
 				found = VK_TRUE;
+				result = VK_SUCCESS;
 				break;
 			}
 		}
 		if (!found) {
-			fprintf(stderr, "ERROR: Validation layer %s is not supported\n", validationLayers[i]);
-			result = VK_ERROR_LAYER_NOT_PRESENT;
+			break;
 		}
 	}
 
-	return result;
+	return i;
 }
 
 static uint32_t requiredInstanceExtensionsCount = 0;
 static const char **requiredInstanceExtensions = nullptr;
-static VkResult checkExtensionSupport() {
+static uint32_t checkExtensionSupport() {
 	/* Checks if the required instance extensions are supported in the instance 
 	 * Exits if not supported */
-	VkResult result = VK_SUCCESS;
+	/* Returns the index of the extension not present */
+	VkResult result;
 
 	uint32_t supportedExtensionsNum = 0;
-	vkEnumerateInstanceExtensionProperties(nullptr, &supportedExtensionsNum, nullptr);
+	result = vkEnumerateInstanceExtensionProperties(nullptr, &supportedExtensionsNum, nullptr);
+	handleVulkanError(result, "vkEnumerateInstanceExtensionProperties", true);
 	VkExtensionProperties supportedExtensions[supportedExtensionsNum];
-	vkEnumerateInstanceExtensionProperties(nullptr, &supportedExtensionsNum, supportedExtensions);
-	for (uint32_t i = 0; i < requiredInstanceExtensionsCount; i++) {
+	result = vkEnumerateInstanceExtensionProperties(nullptr, &supportedExtensionsNum, supportedExtensions);
+	handleVulkanError(result, "vkEnumerateInstanceExtensionProperties", true);
+
+	uint32_t i;
+	for (i = 0; i < requiredInstanceExtensionsCount; i++) {
 		VkBool32 found = VK_FALSE;
 		for (uint32_t j = 0; j < supportedExtensionsNum; j++) {
 			if (strcmp(requiredInstanceExtensions[i], supportedExtensions[j].extensionName) == 0) {
@@ -82,12 +78,11 @@ static VkResult checkExtensionSupport() {
 			}
 		}
 		if (!found) {
-			fprintf(stderr, "ERROR: Required extension %s is not supported\n", requiredInstanceExtensions[i]);
-			result = VK_ERROR_EXTENSION_NOT_PRESENT;
+			break;
 		}
 	}
 
-	return result;
+	return i;
 }
 
 extern VkInstance instance;
@@ -97,50 +92,56 @@ static VkResult createInstance() {
 	 * Then checks for the required instance extensions (these are glfw extensions,
 	 * and portability extensions for MacOS) */
 	VkResult result = VK_SUCCESS;
+	uint32_t unsupportedLayer;
 
 	// Checking validation layer support
 #ifndef NDEBUG
-	result = checkValidationLayerSupport();
-	if (result < VK_SUCCESS) return result;
+	unsupportedLayer = checkValidationLayerSupport();
+	if (unsupportedLayer < validationLayersCount) {
+		fprintf(stderr, "INIT ERROR: validation layer %s not present\n", validationLayers[unsupportedLayer]);
+		exit(RENDERER_ERROR_VULKAN);
+	}
 #endif
 
 	// Finding required extensions for glfw
-	uint32_t glfwExtensionCount = 0;
-	const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+	uint32_t glfwExtensionsCount = 0;
+	const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionsCount);
 
-	requiredInstanceExtensionsCount = glfwExtensionCount;
+	requiredInstanceExtensionsCount = glfwExtensionsCount;
 #ifndef NDEBUG
 	requiredInstanceExtensionsCount++;
 #endif
-	// portability extension is required for MoltenVk
 #ifdef MAC_OS 
 	requiredInstanceExtensionsCount++;
 #endif
-	requiredInstanceExtensions = malloc((sizeof *glfwExtensions) * requiredInstanceExtensionsCount);
+	requiredInstanceExtensions = malloc((sizeof(const char *)) * requiredInstanceExtensionsCount);
 	if (!requiredInstanceExtensions) {
-		fprintf(stderr, "ERROR: Failed allocating memory for GLFW extensions\n");
+		fprintf(stderr, "ERROR: Failed allocating memory for extensions\n");
 		result = VK_ERROR_OUT_OF_HOST_MEMORY;
 		goto failure;
 	}
-	puts("The following extensions are required:");
-	for (uint32_t i = 0; i < requiredInstanceExtensionsCount - 1; i++) {
+	for (uint32_t i = 0; i < glfwExtensionsCount; i++) {
 		requiredInstanceExtensions[i] = glfwExtensions[i];
-		printf("%s, ", requiredInstanceExtensions[i]);
 	}
 #ifdef MAC_OS
 	if (!enableValidationLayers)
 		requiredInstanceExtensions[requiredInstanceExtensionsCount - 1] = VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME;
 	else
 		requiredInstanceExtensions[requiredInstanceExtensionsCount - 2] = VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME;
-	printf("%s\n", VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 #endif
 #ifndef NDEBUG
 	requiredInstanceExtensions[requiredInstanceExtensionsCount - 1] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
 #endif
-
-	// Checking for extension support
-	if ((result = checkExtensionSupport()) < VK_SUCCESS) {
-		goto failure;
+	puts("The following extensions are required:");
+	for (uint32_t i = 0; i < requiredInstanceExtensionsCount; i++) {
+		printf("%s, ", requiredInstanceExtensions[i]);
+	}
+	puts("");
+	// Checking for extension support	
+	unsupportedLayer = checkExtensionSupport();
+	if (unsupportedLayer < requiredInstanceExtensionsCount) {
+		fprintf(stderr, "INIT ERROR: extension %s not present\n", requiredInstanceExtensions[unsupportedLayer]);
+		exit(RENDERER_ERROR_VULKAN);
 	}
 	puts("");
 
@@ -748,13 +749,6 @@ void initVulkan() {
 	};
 
 	for (int i = 0; i < numFunctions; i++) {
-		VkResult result = VK_SUCCESS;
-		result = functionsToCall[i]();
-		if (result < VK_SUCCESS) {
-			fprintf(stderr, "ERROR: %s() returned %d\n", functionsToCallNames[i], result);
-			exit(RENDERER_ERROR_VULKAN_INIT);
-		} else if (result > VK_SUCCESS) 
-			fprintf(stderr, "WARNING: %s() returned %d\n", functionsToCallNames[i], result);
+		handleVulkanError(functionsToCall[i](), functionsToCallNames[i], true);
 	}
-
 }

@@ -118,33 +118,12 @@ extern void recordCommandBuffer(uint32_t);
 void drawFrame() {
 	VkResult result;
 	result = vkWaitForFences(device, 1, &drawFence, VK_TRUE, UINT64_MAX);
-#ifndef NDEBUG
-	if (result < VK_SUCCESS) {
-		fprintf(stderr, "ERROR: vkWaitForFences() returned %d\n", result);
-		exit(RENDERER_ERROR_DRAW);
-	} else if (result > VK_SUCCESS) {
-		fprintf(stderr, "WARNING: vkWaitForFences() returned %d\n", result);
-	}
-#endif
+	handleVulkanError(result, "vkWaitForFences", true);
 	result = vkResetFences(device, 1, &drawFence);
-#ifndef NDEBUG
-	if (result < VK_SUCCESS) {
-		fprintf(stderr, "ERROR: vkResetFences() returned %d\n", result);
-		exit(RENDERER_ERROR_DRAW);
-	} else if (result > VK_SUCCESS) {
-		fprintf(stderr, "WARNING: vkResetFences() returned %d\n", result);
-	}
-#endif
+	handleVulkanError(result, "vkResetFences", true);
 	uint32_t nextImageIndex;
 	result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, presentCompleteSemaphore, VK_NULL_HANDLE, &nextImageIndex);
-#ifndef NDEBUG
-	if (result < VK_SUCCESS) {
-		fprintf(stderr, "ERROR: vkAcquireNextImage2KHR() returned %d\n", result);
-		exit(RENDERER_ERROR_DRAW);
-	} else if (result > VK_SUCCESS) {
-		fprintf(stderr, "WARNING: vkAcquireNextImage2KHR() returned %d\n", result);
-	}
-#endif
+	handleVulkanError(result, "vkAcquireNextImageKHR", true);
 	recordCommandBuffer(nextImageIndex);
 
 	VkCommandBufferSubmitInfo commandBufferSubmitInfo = {
@@ -181,7 +160,8 @@ void drawFrame() {
 		.pSignalSemaphoreInfos = &signalRenderCompleteSemaphoreInfo
 	};
 
-	vkQueueSubmit2(queue, 1, &submitInfo, drawFence);
+	result = vkQueueSubmit2(queue, 1, &submitInfo, drawFence);
+	handleVulkanError(result, "vkQueueSubmit2", true);
 
 	VkPresentInfoKHR presentInfo = {
 		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -194,5 +174,6 @@ void drawFrame() {
 		.pResults = nullptr
 	};
 
-	vkQueuePresentKHR(queue, &presentInfo);
+	result = vkQueuePresentKHR(queue, &presentInfo);
+	handleVulkanError(result, "vkQueuePresentKHR", true);
 }

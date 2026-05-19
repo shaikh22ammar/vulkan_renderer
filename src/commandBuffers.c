@@ -94,14 +94,7 @@ VkResult recordCommandBuffer(uint32_t imageIndex) {
 	commandBufferBeginInfo.pNext = nullptr;
 	commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 	VkResult result = vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo);
-#ifndef NDEBUG
-	if (result < VK_SUCCESS) {
-		fprintf(stderr, "ERROR: vkBeginCommandBuffer() returned %d\n", result);
-		exit(RENDERER_ERROR_COMMAND_POOL);
-	} else if (result > VK_SUCCESS) {
-		fprintf(stderr, "WARNING: vkBeginCommandBuffer() returned %d\n", result);
-	}
-#endif
+	handleVulkanError(result, "vkBeginCommandBuffer", true);
 	/* Before recording, we need to transition the image into the
 	 * optimal layout for color attachment.
 	 * We need an image memory barrier for this.
@@ -122,9 +115,9 @@ VkResult recordCommandBuffer(uint32_t imageIndex) {
 			VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 
 	VkClearValue clearColor = {0};
-	clearColor.color.float32[0] = 1.0f;
-	clearColor.color.float32[1] = 1.0f;
-	clearColor.color.float32[2] = 1.0f;
+	clearColor.color.float32[0] = 0.0f;
+	clearColor.color.float32[1] = 0.0f;
+	clearColor.color.float32[2] = 0.0f;
 	clearColor.color.float32[3] = 1.0f;
 
 	// Draw commands must be recorded within a render pass instance. 
@@ -187,12 +180,12 @@ VkResult recordCommandBuffer(uint32_t imageIndex) {
 	 * (as vkQueuePresentKHR performs automatic visibility operations). 
 	 * To achieve this, the dstAccessMask member of the VklmageMemoryBarrier should be 0, 
 	 * and the dstStageMask parameter should be VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT. */
-	vkEndCommandBuffer(commandBuffer);
+	result = vkEndCommandBuffer(commandBuffer);
+	handleVulkanError(result, "vkEndCommandBuffer", true);
 	return result;
 }
 
 void initCommandBuffers() {
-	VkResult result;
 	constexpr int numFunctions = 2;
 	VkResult (*functionsToCall[numFunctions])(void) = {
 		createCommandPool,
@@ -203,11 +196,6 @@ void initCommandBuffers() {
 		"createCommandBuffer"
 	};
 	for (int i = 0; i < numFunctions; i++) {
-		result = functionsToCall[i]();
-		if (result < VK_SUCCESS) {
-			exit(RENDERER_ERROR_COMMAND_POOL);
-		} else if (result > VK_SUCCESS) {
-			fprintf(stderr, "WARNING: %s returned %d\n", functionsToCallNames[i], result);
-		}
+		handleVulkanError(functionsToCall[i](), functionsToCallNames[i], true);
 	}
 }

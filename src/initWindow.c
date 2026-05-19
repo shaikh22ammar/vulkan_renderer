@@ -17,6 +17,6 @@ void initWindow() {
 	window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
 	if (window == nullptr) {
 		fprintf(stderr, "Unable to create GLFW window\n");
-		exit(RENDERER_ERROR_GLFW);
+		exit(RENDERER_ERROR_GFLW);
 	}
 }

@@ -1,45 +1,32 @@
 #ifndef RENDERER_ERROR_H
 #define RENDERER_ERROR_H
 
+#include <stdlib.h>
+#include <vulkan/vulkan_core.h>
+#include <stdio.h>
+
 typedef enum {
 	RENDERER_SUCCESS,
 	RENDERER_ERROR_OUT_OF_MEMORY,
-	RENDERER_ERROR_GLFW,
-	RENDERER_ERROR_VULKAN_INIT,
-	RENDERER_ERROR_GRAPHICS_PIPELINE,
-	RENDERER_ERROR_COMMAND_POOL,
-	RENDERER_ERROR_DRAW,
-	RENDERER_ERROR_INVALID_SHADER
+	RENDERER_ERROR_VULKAN,
+	RENDERER_ERROR_GFLW,
+	RENDERER_ERROR_IO,
+	RENDERER_ERROR_UNKNOWN
 } RendererExitCode;
 
-static inline const char *rendererPrintError(RendererExitCode e) {
-	switch (e) {
-		case RENDERER_SUCCESS:
-			return "RENDERER_SUCCESS";
-			break;
-		case RENDERER_ERROR_OUT_OF_MEMORY:
-			return "RENDERER_ERROR_OUT_OF_MEMORY";
-			break;
-		case RENDERER_ERROR_GLFW:
-			return "RENDERER_ERROR_GLFW";
-			break;
-		case RENDERER_ERROR_VULKAN_INIT:
-			return "RENDERER_ERROR_VULKAN_INIT";
-			break;
-		case RENDERER_ERROR_GRAPHICS_PIPELINE:
-			return "RENDERER_ERROR_GRAPHICS_PIPELINE";
-			break;
-		case RENDERER_ERROR_COMMAND_POOL:
-			return "RENDERER_ERROR_COMMAND_POOL";
-			break;
-		case RENDERER_ERROR_DRAW:
-			return "RENDERER_ERROR_DRAW";
-			break;
-		case RENDERER_ERROR_INVALID_SHADER:
-			return "RENDERER_ERROR_INVALID_SHADER";
-			break;
-		default:
-			return "Unknown error";
+static inline void handleVulkanError(const VkResult result, const char *functionName, const bool exitIfError) {
+	if (result < VK_SUCCESS) {
+		fprintf(stderr, "VULKAN ERROR: %s returned %d\n", functionName, result);
+		if (exitIfError) exit(RENDERER_ERROR_VULKAN);
+	} else if (result > VK_SUCCESS) {
+		fprintf(stderr, "VULKAN WARNING: %s returned %d\n", functionName, result);
+	}
+}
+
+static inline void handleRendererError(const RendererExitCode result, const char *functionName, const bool exitIfError) {
+	if (result != RENDERER_SUCCESS) {
+		fprintf(stderr, "RENDERER ERROR: %s returned %d\n", functionName, result);
+		if (exitIfError) exit(RENDERER_ERROR_VULKAN);
 	}
 }
 #endif
