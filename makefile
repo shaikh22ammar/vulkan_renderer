@@ -13,6 +13,7 @@ PKGS_INFO := $(shell pkg-config --cflags --libs $(PKGS))
 PKGS_INC := $(filter -I%, $(PKGS_INFO))
 PKGS_LIB := $(filter -L%, $(PKGS_INFO)) $(filter -l%, $(PKGS_INFO))
 PKGS_RPATH := $(patsubst -L%, -Wl$(comma)-rpath$(comma)%, $(filter -L%, $(PKGS_LIB)))
+PKGS_INC += -Ithird_party/cglm/include
 
 ### Compiler and linker commands
 
