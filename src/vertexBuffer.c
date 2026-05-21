@@ -2,11 +2,18 @@
 #include <cglm/cglm.h>
 #include <string.h>
 #include <vulkan/vulkan_core.h>
-#include "types.h"
+//#include "types.h"
 
+struct Vertex {
+	vec2 pos;
+	vec3 color;
+};
+static struct Vertex *vertices;
+
+extern VkCommandPool transferCommandPool;
+extern VkQueue queue;
 extern VkPhysicalDevice physicalDevice;
-extern const int numVertices;
-extern struct Vertex *vertices;
+extern int numVertices;
 extern VkDevice device;
 extern VkBuffer vertexBuffer;
 extern VkDeviceMemory vertexBufferMemory;
@@ -29,26 +36,27 @@ static uint32_t findMemoryType(uint32_t supportedMemoryTypes, VkMemoryPropertyFl
 }
 
 static void createVertices() {
+	numVertices = 3;
+
 	vertices = calloc(numVertices, sizeof(struct Vertex));
 	if (!vertices) handleRendererError(RENDERER_ERROR_OUT_OF_MEMORY, "createVertices", true); 
 
 	vertices[0].pos[0] = 0.0f;
 	vertices[0].pos[1] = -0.5f;
 	vertices[0].color[0] = 1.0f;
-	vertices[0].color[1] = 1.0f;
-	vertices[0].color[2] = 1.0f;
+	vertices[0].color[1] = 0.0f;
+	vertices[0].color[2] = 0.0f;
 
 	vertices[1].pos[0] = 0.5f;
 	vertices[1].pos[1] = 0.5f;
-	vertices[1].color[0] = 1.0f;
+	vertices[1].color[0] = 0.0f;
 	vertices[1].color[1] = 1.0f;
-	vertices[1].color[2] = 1.0f;
+	vertices[1].color[2] = 0.0f;
 
 	vertices[2].pos[0] = -0.5f;
 	vertices[2].pos[1] = 0.5f;
-	vertices[2].color[2] = 1.0f;
-	vertices[2].color[0] = 1.0f;
-	vertices[2].color[1] = 1.0f;
+	vertices[2].color[0] = 0.0f;
+	vertices[2].color[1] = 0.0f;
 	vertices[2].color[2] = 1.0f;
 }
 
@@ -94,21 +102,86 @@ static VkResult createBuffer(
 	return VK_SUCCESS;
 }
 
+static VkResult copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size) {
+	VkCommandBufferAllocateInfo transferBufferAllocateInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+		.pNext = nullptr,
+		.commandPool = transferCommandPool,
+		.level = 0,
+		.commandBufferCount = 1
+	};
+	VkCommandBuffer transferCommandBuffer;
+	VkResult result = vkAllocateCommandBuffers(device, &transferBufferAllocateInfo, &transferCommandBuffer);
+	if (result < VK_SUCCESS) return result;
+
+	VkCommandBufferBeginInfo transferCommandBufferBeginInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.pNext = nullptr,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+	};
+	result = vkBeginCommandBuffer(transferCommandBuffer, &transferCommandBufferBeginInfo);
+	if (result < VK_SUCCESS) return result;
+
+	VkBufferCopy bufferCopy = {.srcOffset = 0, .dstOffset = 0, .size = size};
+	vkCmdCopyBuffer(transferCommandBuffer, src, dst, 1, &bufferCopy);
+	 
+	result = vkEndCommandBuffer(transferCommandBuffer);
+	if (result < VK_SUCCESS) return result;
+
+	VkCommandBufferSubmitInfo transferCommandBufferSubmitInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+		.pNext = nullptr,
+		.commandBuffer = transferCommandBuffer,
+		.deviceMask = 0
+	};
+
+	VkSubmitInfo2 transferSubmitInfo = {
+		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+		.pNext = nullptr,
+		.commandBufferInfoCount = 1,
+		.pCommandBufferInfos = &transferCommandBufferSubmitInfo
+	};
+	result = vkQueueSubmit2(queue, 1, &transferSubmitInfo, VK_NULL_HANDLE);
+	if (result < VK_SUCCESS) return result;
+	result = vkQueueWaitIdle(queue);
+	if (result < VK_SUCCESS) return result;
+
+	result = vkResetCommandPool(device, transferCommandPool, VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
+	return result;
+}
+
 static void createVertexBuffer() {
 	VkDeviceSize vertexBufferSize = numVertices * sizeof vertices[0];
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
 	createBuffer(
 		vertexBufferSize, 
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
 		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-		&vertexBuffer, &vertexBufferMemory);
+		&stagingBuffer, &stagingBufferMemory);
 	void *data;
-	VkResult result = vkMapMemory(device, vertexBufferMemory, 0, vertexBufferSize, 0, &data);
+	VkResult result = vkMapMemory(device, stagingBufferMemory, 0, vertexBufferSize, 0, &data);
 	handleVulkanError(result, "createVertexBuffer", true);
 	memcpy(data, vertices, vertexBufferSize);
-	vkUnmapMemory(device, vertexBufferMemory);
+	vkUnmapMemory(device, stagingBufferMemory);
+
+	result = createBuffer(
+		vertexBufferSize, 
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+		&vertexBuffer, &vertexBufferMemory);
+	handleVulkanError(result, "createBuffer", true);
+
+	result = copyBuffer(stagingBuffer, vertexBuffer, vertexBufferSize);
+	handleVulkanError(result, "copyBuffer", true);
+
+	vkFreeMemory(device, stagingBufferMemory, nullptr);
+	vkDestroyBuffer(device, stagingBuffer, nullptr);
 }
 
 void initVertices() {
 	createVertices();
 	createVertexBuffer();
+	free(vertices);
+	vertices = NULL;
 }

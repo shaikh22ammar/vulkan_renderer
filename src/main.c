@@ -10,7 +10,6 @@
 
 #include "rendererErrors.h"
 #include "constants.h"
-#include "types.h"
 
 
 // glfw
@@ -42,6 +41,7 @@ VkPipeline graphicsPipeline = VK_NULL_HANDLE;
 
 // command pool
 VkCommandPool commandPool = VK_NULL_HANDLE;
+VkCommandPool transferCommandPool = VK_NULL_HANDLE;
 
 
 // frame in flight
@@ -73,8 +73,7 @@ VkSemaphore *pRenderingDoneSemaphores = nullptr;
  * Remember that draw commands wait on an image being available and thus implicitly
  * also wait for this semaphore of that image to be unsignaled. */
 
-struct Vertex *vertices = nullptr;
-const int numVertices = 3;
+int numVertices;
 VkBuffer vertexBuffer = VK_NULL_HANDLE;
 VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
 
@@ -91,13 +90,11 @@ extern void destroySyncObjects();
 static void cleanUp() {
 	vkFreeMemory(device, vertexBufferMemory, nullptr);
 	vkDestroyBuffer(device, vertexBuffer, nullptr);
-	free(vertices);
-	vertices = NULL;
-
 	// sync objects
 	destroySyncObjects();
 
 	// command pool
+	vkDestroyCommandPool(device, transferCommandPool, nullptr);
 	vkDestroyCommandPool(device, commandPool, nullptr);
 	free(pCommandBuffers);
 	pCommandBuffers = nullptr;

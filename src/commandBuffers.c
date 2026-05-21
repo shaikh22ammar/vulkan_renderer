@@ -8,6 +8,7 @@
 extern VkDevice device;
 extern uint32_t queueFamilyIndex;
 extern VkCommandPool commandPool;
+extern VkCommandPool transferCommandPool;
 extern VkCommandBuffer *pCommandBuffers;
 extern VkImage *swapChainImages;
 extern VkImageView *swapChainImageViews;
@@ -33,7 +34,24 @@ static VkResult createCommandPool() {
 					 * reset individually withou having to 
 					 * reset the entire pool */
 	result = vkCreateCommandPool(device, &commandPoolCreateInfo, nullptr, &commandPool);
+	return result;
+}
 
+
+static VkResult createTransferCommandPool() {
+	/* Command pools are allocators for command buffers.
+	 * Since allocating and freeing command buffers individually would be
+	 * too expensive, implementations offer specialized allocators called
+	 * command pools that can reuse memory */
+	VkResult result;
+	VkCommandPoolCreateInfo commandPoolCreateInfo = {0};
+	commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	commandPoolCreateInfo.pNext = nullptr;
+	commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndex;
+	commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+					/* Command buffers in this pool are short-lived
+					 * */
+	result = vkCreateCommandPool(device, &commandPoolCreateInfo, nullptr, &transferCommandPool);
 	return result;
 }
 
@@ -199,13 +217,15 @@ VkResult recordCommandBuffer(uint32_t imageIndex) {
 }
 
 void initCommandBuffers() {
-	constexpr int numFunctions = 2;
+	constexpr int numFunctions = 3;
 	VkResult (*functionsToCall[numFunctions])(void) = {
 		createCommandPool,
+		createTransferCommandPool,
 		createCommandBuffer
 	};
 	const char *functionsToCallNames[numFunctions] = {
 		"createCommandPool",
+		"createTransferCommandPool",
 		"createCommandBuffer"
 	};
 	for (int i = 0; i < numFunctions; i++) {
