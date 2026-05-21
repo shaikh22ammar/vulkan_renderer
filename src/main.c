@@ -3,12 +3,14 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <stdint.h>
+#include <cglm/cglm.h>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 #include "rendererErrors.h"
 #include "constants.h"
+#include "types.h"
 
 
 // glfw
@@ -71,6 +73,11 @@ VkSemaphore *pRenderingDoneSemaphores = nullptr;
  * Remember that draw commands wait on an image being available and thus implicitly
  * also wait for this semaphore of that image to be unsignaled. */
 
+struct Vertex *vertices = nullptr;
+const int numVertices = 3;
+VkBuffer vertexBuffer = VK_NULL_HANDLE;
+VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
+
 void drawFrame();
 static void mainLoop() {
 	while(!glfwWindowShouldClose(window)) {
@@ -82,6 +89,11 @@ static void mainLoop() {
 extern void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 extern void destroySyncObjects();
 static void cleanUp() {
+	vkFreeMemory(device, vertexBufferMemory, nullptr);
+	vkDestroyBuffer(device, vertexBuffer, nullptr);
+	free(vertices);
+	vertices = NULL;
+
 	// sync objects
 	destroySyncObjects();
 
@@ -128,12 +140,14 @@ extern void initVulkan();
 extern void initGraphicsPipeline();
 extern void initCommandBuffers();
 extern void initSyncObjects();
+extern void initVertices();
 static void run() {
 	initWindow();
 	initVulkan();
 	initGraphicsPipeline();
 	initCommandBuffers();
 	initSyncObjects();
+	initVertices();
 	mainLoop();
 	cleanUp();
 }

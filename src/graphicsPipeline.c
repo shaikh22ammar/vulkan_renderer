@@ -18,6 +18,7 @@
 #include "readFile.h"
 #include <vulkan/vulkan_core.h>
 #include "rendererErrors.h"
+#include "types.h"
 
 #define SHADER_DIR "shaders/"
 
@@ -100,9 +101,29 @@ void initGraphicsPipeline() {
 	viewportStateCreateInfo.scissorCount = 1;
 	
 	// vertex input
-	VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo = {0};
-	vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputCreateInfo.pNext = nullptr;
+	VkVertexInputBindingDescription vertexInputBindingDescription = {
+		.binding = 0,
+		.stride = sizeof(struct Vertex),
+		.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+	};
+
+	VkVertexInputAttributeDescription vertexInputAttributeDescriptions[2];
+	vertexInputAttributeDescriptions[0].binding = 0;
+	vertexInputAttributeDescriptions[0].location = 0;
+	vertexInputAttributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+	vertexInputAttributeDescriptions[0].offset = offsetof(struct Vertex, pos);
+	vertexInputAttributeDescriptions[1].binding = 0;
+	vertexInputAttributeDescriptions[1].location = 1;
+	vertexInputAttributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+	vertexInputAttributeDescriptions[1].offset = offsetof(struct Vertex, color);
+
+	VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo = {0};
+	vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	vertexInputStateCreateInfo.pNext = nullptr;
+	vertexInputStateCreateInfo.vertexBindingDescriptionCount = 1;
+	vertexInputStateCreateInfo.pVertexBindingDescriptions = &vertexInputBindingDescription;
+	vertexInputStateCreateInfo.vertexAttributeDescriptionCount = 2;
+	vertexInputStateCreateInfo.pVertexAttributeDescriptions = vertexInputAttributeDescriptions;
 
 	// input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyCreateInfo = {0};
@@ -178,7 +199,7 @@ void initGraphicsPipeline() {
 	graphicsPipelineCreateInfo.pNext = &pipelineRenderingCreateInfo;
 	graphicsPipelineCreateInfo.stageCount = shaderStagesCount;
 	graphicsPipelineCreateInfo.pStages = shaderStages;
-	graphicsPipelineCreateInfo.pVertexInputState = &vertexInputCreateInfo;
+	graphicsPipelineCreateInfo.pVertexInputState = &vertexInputStateCreateInfo;
 	graphicsPipelineCreateInfo.pInputAssemblyState = &inputAssemblyCreateInfo;
 	graphicsPipelineCreateInfo.pViewportState = &viewportStateCreateInfo;
 	graphicsPipelineCreateInfo.pRasterizationState = &rasterizationStateCreateInfo;

@@ -13,6 +13,8 @@ extern VkImage *swapChainImages;
 extern VkImageView *swapChainImageViews;
 extern VkExtent2D swapChainExtent;
 extern VkPipeline graphicsPipeline;
+extern VkBuffer vertexBuffer;
+extern int numVertices;
 
 extern unsigned int currentFrameInFlight;
 
@@ -173,7 +175,9 @@ VkResult recordCommandBuffer(uint32_t imageIndex) {
 	scissor.extent = swapChainExtent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+	VkDeviceSize pZeros[1] = {0};
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, pZeros);
+	vkCmdDraw(commandBuffer, numVertices, 1, 0, 0);
 	vkCmdEndRendering(commandBuffer);
 
 	transitionImageLayout(
