@@ -74,8 +74,11 @@ VkSemaphore *pRenderingDoneSemaphores = nullptr;
  * also wait for this semaphore of that image to be unsignaled. */
 
 int numVertices;
+int numIndices;
 VkBuffer vertexBuffer = VK_NULL_HANDLE;
 VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
+VkBuffer indexBuffer = VK_NULL_HANDLE;
+VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
 
 void drawFrame();
 static void mainLoop() {

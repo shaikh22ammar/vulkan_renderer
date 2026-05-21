@@ -15,6 +15,8 @@ extern VkImageView *swapChainImageViews;
 extern VkExtent2D swapChainExtent;
 extern VkPipeline graphicsPipeline;
 extern VkBuffer vertexBuffer;
+extern VkBuffer indexBuffer;
+extern int numIndices;
 extern int numVertices;
 
 extern unsigned int currentFrameInFlight;
@@ -195,7 +197,9 @@ VkResult recordCommandBuffer(uint32_t imageIndex) {
 
 	VkDeviceSize pZeros[1] = {0};
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, pZeros);
-	vkCmdDraw(commandBuffer, numVertices, 1, 0, 0);
+	vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+	//vkCmdDraw(commandBuffer, numVertices, 1, 0, 0);
+	vkCmdDrawIndexed(commandBuffer, numIndices, 1, 0, 0, 0);
 	vkCmdEndRendering(commandBuffer);
 
 	transitionImageLayout(
