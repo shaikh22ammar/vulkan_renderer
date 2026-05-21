@@ -575,7 +575,7 @@ VkResult createSwapChain() {
 	}
 	VkSurfaceFormatKHR surfaceFormat = surfaceFormats[0];
 	for (uint32_t i = 0; i < surfaceFormatsCount; i++) {
-		if (surfaceFormats[i].format == VK_FORMAT_B8G8R8_SRGB && surfaceFormats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+		if (surfaceFormats[i].format == VK_FORMAT_B8G8R8A8_SRGB && surfaceFormats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
 			surfaceFormat = surfaceFormats[i];
 			break;
 		}

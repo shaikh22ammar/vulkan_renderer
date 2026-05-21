@@ -91,6 +91,8 @@ static void mainLoop() {
 extern void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 extern void destroySyncObjects();
 static void cleanUp() {
+	vkFreeMemory(device, indexBufferMemory, nullptr);
+	vkDestroyBuffer(device, indexBuffer, nullptr);
 	vkFreeMemory(device, vertexBufferMemory, nullptr);
 	vkDestroyBuffer(device, vertexBuffer, nullptr);
 	// sync objects

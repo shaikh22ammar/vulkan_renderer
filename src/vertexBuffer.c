@@ -39,7 +39,7 @@ static uint32_t findMemoryType(uint32_t supportedMemoryTypes, VkMemoryPropertyFl
 	return VK_MAX_MEMORY_TYPES;
 }
 
-static void createTriangleVertices() {
+[[maybe_unused]] static void createTriangleVertices() {
 	numVertices = 3;
 
 	vertices = calloc(numVertices, sizeof(struct Vertex));
@@ -62,9 +62,16 @@ static void createTriangleVertices() {
 	vertices[2].color[0] = 0.0f;
 	vertices[2].color[1] = 0.0f;
 	vertices[2].color[2] = 1.0f;
+
+	numIndices = 3;
+	vertexIndices = malloc(numIndices * sizeof(uint16_t));
+	if (!vertexIndices) handleRendererError(RENDERER_ERROR_OUT_OF_MEMORY, "createVertices", true); 
+	vertexIndices[0] = 0;
+	vertexIndices[1] = 1;
+	vertexIndices[2] = 2;
 }
 
-static void createSquareVertices() {
+[[maybe_unused]] static void createSquareVertices() {
 	numVertices = 4;
 
 	vertices = calloc(numVertices, sizeof(struct Vertex));
