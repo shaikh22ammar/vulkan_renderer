@@ -13,7 +13,7 @@ extern VkDeviceMemory vertexBufferMemory;
 
 extern VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo;
 
-static uint32_t findMemoryType(uint32_t supportedMemoryTypes, VkMemoryPropertyFlagBits requiredMemoryProperties) {
+static uint32_t findMemoryType(uint32_t supportedMemoryTypes, VkMemoryPropertyFlags requiredMemoryProperties) {
 	VkPhysicalDeviceMemoryProperties2 deviceMemoryProperies = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2,
 		.pNext = nullptr
@@ -52,22 +52,31 @@ static void createVertices() {
 	vertices[2].color[2] = 1.0f;
 }
 
-static void createVertexBuffer() {
+static VkResult createBuffer(
+		VkDeviceSize size,
+		VkBufferUsageFlags usageFlag, 
+		VkMemoryPropertyFlags memPropertyFlags,
+		VkBuffer *pBuffer,
+		VkDeviceMemory *pMemory) {
+
 	VkBufferCreateInfo bufferCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 		.pNext = nullptr,
-		.size = 3 * sizeof vertices[0],
-		.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		.size = size,
+		.usage = usageFlag,
 		.sharingMode = VK_SHARING_MODE_EXCLUSIVE
 	};
-	VkResult result = vkCreateBuffer(device, &bufferCreateInfo, nullptr, &vertexBuffer);
-	handleVulkanError(result, "vkCreateBuffer", true);
+	VkResult result = vkCreateBuffer(device, &bufferCreateInfo, nullptr, pBuffer);
+	if (result < VK_SUCCESS) return result;
+	if (!pMemory) return VK_SUCCESS;
+
 	VkMemoryRequirements bufferMemoryRequirements;
-	vkGetBufferMemoryRequirements(device, vertexBuffer, &bufferMemoryRequirements);
-	uint32_t i = findMemoryType(bufferMemoryRequirements.memoryTypeBits, 
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	vkGetBufferMemoryRequirements(device, *pBuffer, &bufferMemoryRequirements);
+	uint32_t i = findMemoryType(
+			bufferMemoryRequirements.memoryTypeBits, 
+			memPropertyFlags);
 	if (i == VK_MAX_MEMORY_TYPES) 
-		handleRendererError(RENDERER_ERROR_INCOMPATIBILITY, "findMemoryType", true);
+		return VK_ERROR_UNKNOWN;
 
 	VkMemoryAllocateInfo memoryAllocateInfo = {
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
@@ -76,15 +85,26 @@ static void createVertexBuffer() {
 		.memoryTypeIndex = i
 	};
 
-	result = vkAllocateMemory(device, &memoryAllocateInfo, nullptr, &vertexBufferMemory);
-	handleVulkanError(result, "vkAllocateMemory", true);
+	result = vkAllocateMemory(device, &memoryAllocateInfo, nullptr, pMemory);
+	if (result < VK_SUCCESS) return result;
 
-	result = vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
-	handleVulkanError(result, "vkBindBufferMemory", true);
+	result = vkBindBufferMemory(device, *pBuffer, *pMemory, 0);
+	if (result < VK_SUCCESS) return result;
 
+	return VK_SUCCESS;
+}
+
+static void createVertexBuffer() {
+	VkDeviceSize vertexBufferSize = numVertices * sizeof vertices[0];
+	createBuffer(
+		vertexBufferSize, 
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		&vertexBuffer, &vertexBufferMemory);
 	void *data;
-	result = vkMapMemory(device, vertexBufferMemory, 0, bufferMemoryRequirements.size, 0, &data);
-	memcpy(data, vertices, bufferCreateInfo.size);
+	VkResult result = vkMapMemory(device, vertexBufferMemory, 0, vertexBufferSize, 0, &data);
+	handleVulkanError(result, "createVertexBuffer", true);
+	memcpy(data, vertices, vertexBufferSize);
 	vkUnmapMemory(device, vertexBufferMemory);
 }
 
