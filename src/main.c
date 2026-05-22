@@ -85,6 +85,9 @@ VkBuffer *pUniformBuffers = nullptr;
 VkDeviceMemory *pUniformBuffersMemories = nullptr;
 void **ppUniformBufferMemoryMapped = nullptr;
 
+VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
+VkDescriptorSet *pDescriptorSets = nullptr;
+
 void drawFrame();
 static void mainLoop() {
 	while(!glfwWindowShouldClose(window)) {
@@ -96,7 +99,10 @@ static void mainLoop() {
 extern void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 extern void destroySyncObjects();
 extern void destroyUniformBuffers();
+extern void destroyDescriptors();
 static void cleanUp() {
+	destroyDescriptors();
+
 	destroyUniformBuffers();
 	vkFreeMemory(device, indexBufferMemory, nullptr);
 	vkDestroyBuffer(device, indexBuffer, nullptr);
@@ -152,6 +158,7 @@ extern void initCommandBuffers();
 extern void initSyncObjects();
 extern void initVertices();
 extern void initUniformBuffers();
+extern void initDescriptors();
 static void run() {
 	initWindow();
 	initVulkan();
@@ -160,6 +167,7 @@ static void run() {
 	initSyncObjects();
 	initVertices();
 	initUniformBuffers();
+	initDescriptors();
 	mainLoop();
 	cleanUp();
 }

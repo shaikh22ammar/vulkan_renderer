@@ -1,9 +1,6 @@
-#include "rendererErrors.h"
 #include <cglm/cglm.h>
 #include <string.h>
 #include <vulkan/vulkan_core.h>
-#include "constants.h"
-//#include "types.h"
 
 extern VkDevice device;
 extern VkPhysicalDevice physicalDevice;
