@@ -1,4 +1,5 @@
 #include "constants.h"
+#include "rendererErrors.h"
 #include <stdlib.h>
 #include <vulkan/vulkan_core.h>
 extern VkDescriptorPool descriptorPool;
@@ -21,7 +22,7 @@ static VkResult createDescriptorPools() {
 		.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
 		.maxSets = MAX_FRAMES_IN_FLIGHT,
 		.poolSizeCount = 1,
-		.pPoolSizes = & descriptorPoolSize
+		.pPoolSizes = &descriptorPoolSize
 	};
 
 	VkResult result = vkCreateDescriptorPool(device, &descriptorPoolCreateInfo, nullptr, &descriptorPool);
@@ -47,23 +48,41 @@ static VkResult createDescriptorSets() {
 	return result;
 }
 
-static VkResult populateDescriptorSets() {
+
+extern const size_t sizeOfMVPmatrix;
+VkResult populateDescriptorSets() {
 	for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		VkDescriptorBufferInfo descriptorBufferInfo = {
-			.buffer = uniform
-		}
+			.buffer = pUniformBuffers[i],
+			.offset = 0,
+			.range = sizeOfMVPmatrix
+		};
+		VkWriteDescriptorSet descriptorWrite = {
+			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			.pNext = nullptr,
+			.dstSet = pDescriptorSets[i],
+			.dstBinding = 0,
+			.dstArrayElement = 0,
+			.descriptorCount = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			.pBufferInfo = &descriptorBufferInfo
+		};
+		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 	}
+	return VK_SUCCESS;
 }
 
 void initDescriptors() {
-	constexpr unsigned int numFunctions = 2;
+	constexpr unsigned int numFunctions = 3;
 	VkResult (*functionsToCall[numFunctions])(void) = {
 		createDescriptorPools,
-		createDescriptorSets
+		createDescriptorSets,
+		populateDescriptorSets
 	};
 	const char *functionNames[numFunctions] = {
 		"createDescriptorPools",
-		"createDescriptorSets"
+		"createDescriptorSets",
+		"populateDescriptorSets"
 	};
 	for (unsigned int i = 0; i < numFunctions; i++) {
 		handleVulkanError(functionsToCall[i](), functionNames[i], true);

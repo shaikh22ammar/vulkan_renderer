@@ -1,6 +1,7 @@
 #include "rendererErrors.h"
 #include <vulkan/vulkan_core.h>
 #include "constants.h"
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
@@ -19,6 +20,7 @@ extern "C" {
 	extern VkQueue queue;
 	extern VkCommandPool transferCommandPool;
 
+	extern void setBufferLabel(VkDevice device, VkBuffer buffer, const char* name);
 	extern VkResult createBuffer(
 			VkDeviceSize size,
 			VkBufferUsageFlags usageFlag, 
@@ -32,6 +34,8 @@ struct MVPmatrix {
 	glm::mat4 view;
 	glm::mat4 proj;
 };
+
+extern "C" const size_t sizeOfMVPmatrix = sizeof(struct MVPmatrix);
 
 static void createUniformBuffers() {
 	pUniformBuffers = (VkBuffer *) malloc(MAX_FRAMES_IN_FLIGHT * sizeof(VkBuffer));
@@ -53,6 +57,10 @@ static void createUniformBuffers() {
 		result = vkMapMemory(device, pUniformBuffersMemories[i], 0, bufferSize, 0, ppUniformBufferMemoryMapped + i);
 		handleVulkanError(result, "vkMapMemory", true);
 	}
+#ifndef NDEBUG
+	setBufferLabel(device, pUniformBuffers[0], "UBO 0");
+	setBufferLabel(device, pUniformBuffers[1], "UBO 1");
+#endif
 }
 
 extern "C" void initUniformBuffers() {
@@ -70,7 +78,7 @@ extern "C" void updateUniformBuffers() {
 	ubo.view  = lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj =
 	    glm::perspective(glm::radians(45.0f), static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height), 0.1f, 10.0f);
-	ubo.proj[1][1] *= -1;
+	ubo.proj[1][1] *= -1.0f;
 
 	memcpy(ppUniformBufferMemoryMapped[currentFrameInFlight], &ubo, sizeof ubo);
 }
@@ -85,3 +93,4 @@ extern "C" void destroyUniformBuffers() {
 	free(pUniformBuffersMemories); pUniformBuffersMemories = nullptr;
 	free(ppUniformBufferMemoryMapped); ppUniformBufferMemoryMapped = nullptr;
 }
+

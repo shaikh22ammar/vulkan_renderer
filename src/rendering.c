@@ -11,13 +11,14 @@ extern VkCommandBuffer *pCommandBuffers;
 extern VkImage *swapChainImages;
 extern VkImageView *swapChainImageViews;
 extern VkExtent2D swapChainExtent;
+extern VkPipelineLayout pipelineLayout;
 extern VkPipeline graphicsPipeline;
 extern VkBuffer vertexBuffer;
 extern VkBuffer indexBuffer;
 extern int numIndices;
 extern int numVertices;
-
 extern unsigned int currentFrameInFlight;
+extern VkDescriptorSet *pDescriptorSets;
 
 static void transitionImageLayout(
 		uint32_t imageIndex,
@@ -145,6 +146,15 @@ VkResult recordCommandBuffer(uint32_t imageIndex) {
 	VkDeviceSize pZeros[1] = {0};
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, pZeros);
 	vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+	vkCmdBindDescriptorSets(
+			commandBuffer, 
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			pipelineLayout,
+			0,
+			1,
+			pDescriptorSets + currentFrameInFlight,
+			0, nullptr
+			);
 	vkCmdDrawIndexed(commandBuffer, numIndices, 1, 0, 0, 0);
 	vkCmdEndRendering(commandBuffer);
 
