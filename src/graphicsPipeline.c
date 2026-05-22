@@ -27,6 +27,7 @@ extern VkExtent2D swapChainExtent;
 extern VkSurfaceFormatKHR swapChainSurfaceFormat;
 extern VkPipelineLayout pipelineLayout;
 extern VkPipeline graphicsPipeline;
+extern VkDescriptorSetLayout descriptorSetLayout;
 
 VkResult createShaderModule(const uint32_t *shaderCode, const size_t shaderCodeSize, VkShaderModule *shaderModule) {
 	// shader code needs to be 32 bit aligned
@@ -176,10 +177,27 @@ void initGraphicsPipeline() {
 	colorBlendStateCreateInfo.pAttachments = &colorBlendAttachmentState;
 
 	// Pipeline layout
+	VkDescriptorSetLayoutBinding uboDescriptorSetLayoutBinding = {
+		.binding = 0,
+		.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+		.pImmutableSamplers = nullptr
+	};
+	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
+		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.bindingCount = 1,
+		.pBindings = &uboDescriptorSetLayoutBinding
+	};
+	VkResult descriptorLayoutCreationResult = vkCreateDescriptorSetLayout(device, &descriptorSetLayoutCreateInfo, nullptr, &descriptorSetLayout);
+	handleVulkanError(descriptorLayoutCreationResult, "vkCreateDescriptorSetLayout", true);
+
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutCreateInfo.pNext = nullptr;
-	pipelineLayoutCreateInfo.setLayoutCount = 0;
+	pipelineLayoutCreateInfo.setLayoutCount = 1;
+	pipelineLayoutCreateInfo.pSetLayouts = &descriptorSetLayout;
 	pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
 
 	VkResult pipelineLayoutCreationResult;

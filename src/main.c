@@ -37,6 +37,7 @@ VkImageView *swapChainImageViews = VK_NULL_HANDLE;
 
 // graphics pipeline
 VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
 VkPipeline graphicsPipeline = VK_NULL_HANDLE;
 
 // command pool
@@ -80,6 +81,10 @@ VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
 VkBuffer indexBuffer = VK_NULL_HANDLE;
 VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
 
+VkBuffer *pUniformBuffers = nullptr;
+VkDeviceMemory *pUniformBuffersMemories = nullptr;
+void **ppUniformBufferMemoryMapped = nullptr;
+
 void drawFrame();
 static void mainLoop() {
 	while(!glfwWindowShouldClose(window)) {
@@ -90,7 +95,9 @@ static void mainLoop() {
 }
 extern void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 extern void destroySyncObjects();
+extern void destroyUniformBuffers();
 static void cleanUp() {
+	destroyUniformBuffers();
 	vkFreeMemory(device, indexBufferMemory, nullptr);
 	vkDestroyBuffer(device, indexBuffer, nullptr);
 	vkFreeMemory(device, vertexBufferMemory, nullptr);
@@ -107,6 +114,7 @@ static void cleanUp() {
 	// graphics pipeline
 	vkDestroyPipeline(device, graphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 
 	// swapchain image views
 	for (uint32_t i = 0; i < swapChainImagesCount; i++) {
@@ -143,6 +151,7 @@ extern void initGraphicsPipeline();
 extern void initCommandBuffers();
 extern void initSyncObjects();
 extern void initVertices();
+extern void initUniformBuffers();
 static void run() {
 	initWindow();
 	initVulkan();
@@ -150,6 +159,7 @@ static void run() {
 	initCommandBuffers();
 	initSyncObjects();
 	initVertices();
+	initUniformBuffers();
 	mainLoop();
 	cleanUp();
 }
@@ -160,6 +170,7 @@ int main() {
 }
 
 extern void recordCommandBuffer(uint32_t);
+void updateUniformBuffers();
 void drawFrame() {
 	VkResult result;
 
@@ -221,6 +232,7 @@ void drawFrame() {
 		.pSignalSemaphoreInfos = &signalRenderCompleteSemaphoreInfo
 	};
 
+	updateUniformBuffers();
 	/* Submit the drawing commands.
 	 * Signal the drawFence when the commands finish executing */
 	result = vkQueueSubmit2(queue, 1, &submitInfo, pDrawingDoneFences[currentFrameInFlight]);
