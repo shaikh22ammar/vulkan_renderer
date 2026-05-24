@@ -1,24 +1,37 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <vulkan/vulkan_core.h>
+#include "constants.h"
 #include "rendererErrors.h"
+#include <cglm/cglm.h>
+#include "types.h"
 
+extern unsigned int currentFrameInFlight;
+
+extern VkQueue queue; 
 extern VkDevice device;
-extern uint32_t queueFamilyIndex;
-extern VkCommandPool commandPool;
-extern VkCommandPool transferCommandPool;
 extern VkCommandBuffer *pCommandBuffers;
+
+extern VkSwapchainKHR swapChain;
 extern VkImage *swapChainImages;
 extern VkImageView *swapChainImageViews;
 extern VkExtent2D swapChainExtent;
-extern VkPipelineLayout pipelineLayout;
+
 extern VkPipeline graphicsPipeline;
+extern VkPipelineLayout pipelineLayout;
+
+extern VkDeviceSize indexOffset;
+extern VkDeviceSize vertexBufferSize;
 extern VkBuffer vertexBuffer;
-extern VkBuffer indexBuffer;
-extern int numIndices;
 extern int numVertices;
-extern unsigned int currentFrameInFlight;
-extern VkDescriptorSet *pDescriptorSets;
+extern int numIndices;
+
+extern VkSemaphore *pAcquiredImageSemaphores;
+extern VkFence *pDrawingDoneFences;
+extern VkSemaphore *pRenderingDoneSemaphores;
+
+
+extern struct pushConstants pushConstants;
 
 static void transitionImageLayout(
 		uint32_t imageIndex,
@@ -65,15 +78,14 @@ static void transitionImageLayout(
 	vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
 }
 
-VkResult recordCommandBuffer(uint32_t imageIndex) {
+static RendererResult recordCommandBuffer(uint32_t imageIndex) {
 	VkCommandBuffer commandBuffer = pCommandBuffers[currentFrameInFlight];
 	vkResetCommandBuffer(commandBuffer, 0);
 	VkCommandBufferBeginInfo commandBufferBeginInfo = {0};
 	commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	commandBufferBeginInfo.pNext = nullptr;
 	commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	VkResult result = vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo);
-	handleVulkanError(result, "vkBeginCommandBuffer", true);
+	VK_CHECK(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo));
 	/* Before recording, we need to transition the image into the
 	 * optimal layout for color attachment.
 	 * We need an image memory barrier for this.
@@ -145,16 +157,13 @@ VkResult recordCommandBuffer(uint32_t imageIndex) {
 
 	VkDeviceSize pZeros[1] = {0};
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, pZeros);
-	vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
-	vkCmdBindDescriptorSets(
-			commandBuffer, 
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			pipelineLayout,
-			0,
-			1,
-			pDescriptorSets + currentFrameInFlight,
-			0, nullptr
-			);
+	vkCmdBindIndexBuffer(commandBuffer, vertexBuffer, indexOffset, VK_INDEX_TYPE_UINT16);
+
+
+	struct pushConstants pc = pushConstants;
+	vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &pc);
+	//vkCmdPushConstants2(commandBuffer, &pushConstantsInfo);
+
 	vkCmdDrawIndexed(commandBuffer, numIndices, 1, 0, 0, 0);
 	vkCmdEndRendering(commandBuffer);
 
@@ -171,7 +180,94 @@ VkResult recordCommandBuffer(uint32_t imageIndex) {
 	 * (as vkQueuePresentKHR performs automatic visibility operations). 
 	 * To achieve this, the dstAccessMask member of the VklmageMemoryBarrier should be 0, 
 	 * and the dstStageMask parameter should be VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT. */
-	result = vkEndCommandBuffer(commandBuffer);
-	handleVulkanError(result, "vkEndCommandBuffer", true);
-	return result;
+	VK_CHECK(vkEndCommandBuffer(commandBuffer));
+
+	return RENDERER_SUCCESS;
+}
+
+extern void updatePushConstants();
+RendererResult drawFrame() {
+	/* Before recording into the command buffer 
+	 * of the current FIF, make sure it has been executed */
+	VK_CHECK(vkWaitForFences(device, 1, pDrawingDoneFences + currentFrameInFlight, VK_TRUE, UINT64_MAX));
+	VK_CHECK(vkResetFences(device, 1, pDrawingDoneFences + currentFrameInFlight));
+
+	/* Acquire the next image in the swapchain to be presented.
+	 * Signal when image is acquired */
+	uint32_t nextImageIndex;
+	VK_CHECK(vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, pAcquiredImageSemaphores[currentFrameInFlight], VK_NULL_HANDLE, &nextImageIndex));
+
+
+	/* Start recording the command buffer for the current FIF 
+	 * with the next image in swapchain as attachment */
+	updatePushConstants();
+	recordCommandBuffer(nextImageIndex);
+
+	VkCommandBufferSubmitInfo commandBufferSubmitInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+		.pNext = nullptr,
+		.commandBuffer = pCommandBuffers[currentFrameInFlight],
+		.deviceMask = 0
+	};
+
+	/* Do not start executing the command buffer commands
+	 * for color attachment until the next image
+	 * has been acquired */
+	VkSemaphoreSubmitInfo waitForImageAcquisitionSemaphoreInfo = {
+		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+		.pNext = nullptr,
+		.semaphore = pAcquiredImageSemaphores[currentFrameInFlight],
+		.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+		.deviceIndex = 0
+	};
+
+	/* Signal the render complete semaphore for the current image
+	 * after all graphics commands in the buffer (and all the commands 
+	 * submitted prior to the queue) is done */
+	VkSemaphoreSubmitInfo signalRenderCompleteSemaphoreInfo = {
+		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+		.pNext = nullptr,
+		.semaphore = pRenderingDoneSemaphores[nextImageIndex],
+		.stageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+		.deviceIndex = 0
+	};
+
+	VkSubmitInfo2 submitInfo = {
+		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+		.pNext = nullptr,
+		.waitSemaphoreInfoCount = 1,
+		.pWaitSemaphoreInfos = &waitForImageAcquisitionSemaphoreInfo,
+		.commandBufferInfoCount = 1,
+		.pCommandBufferInfos = &commandBufferSubmitInfo,
+		.signalSemaphoreInfoCount = 1,
+		.pSignalSemaphoreInfos = &signalRenderCompleteSemaphoreInfo
+	};
+
+	/* Submit the drawing commands.
+	 * Signal the drawFence when the commands finish executing */
+	VK_CHECK(vkQueueSubmit2(queue, 1, &submitInfo, pDrawingDoneFences[currentFrameInFlight]));
+
+	/* Wait for the rendering to be done for the current FIF, 
+	 * to the next swapchain image. Present the render to the next image */
+	VkPresentInfoKHR presentInfo = {
+		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+		.pNext = nullptr,
+		.waitSemaphoreCount = 1,
+		.pWaitSemaphores = pRenderingDoneSemaphores + nextImageIndex,
+		.swapchainCount = 1,
+		.pSwapchains = &swapChain,
+		.pImageIndices = &nextImageIndex,
+		.pResults = nullptr
+	};
+
+	VkResult vr = vkQueuePresentKHR(queue, &presentInfo);
+	if (vr == VK_SUBOPTIMAL_KHR || vr == VK_ERROR_OUT_OF_DATE_KHR) {
+		//TODO update swapchain
+		vr = VK_SUCCESS;
+	}
+	VK_CHECK(vr);
+
+	currentFrameInFlight = (currentFrameInFlight + 1) % MAX_FRAMES_IN_FLIGHT;
+
+	return RENDERER_SUCCESS;
 }

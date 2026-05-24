@@ -8,20 +8,20 @@ struct VSOutput {
 	float3 color;
 };
 
-struct MVPmatrices {
-	float4x4 model;
-	float4x4 view;
-	float4x4 proj;
-};
 
-ConstantBuffer<MVPmatrices> mvp;
+struct PushConstants {
+	float4x4 mvp;
+}
 
 [shader("vertex")]
-VSOutput vertMain(VSInput input) {
+VSOutput vertMain(VSInput input, uniform PushConstants push) {
 	VSOutput output;
+
 	output.pos = float4(input.inPosition, 0.0, 1.0);
-	output.pos = mul(mvp.proj, mul(mvp.view, (mul(mvp.model, output.pos))));
+	output.pos = mul(push.mvp, output.pos);
+
 	output.color = input.inColor;
+
 	return output;
 }
 

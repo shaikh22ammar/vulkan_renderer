@@ -4,21 +4,71 @@
 #include <limits.h>
 #include <stdint.h>
 #include <cglm/cglm.h>
+#include "utils/functionQueue.h"
+#include "types.h"
+
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 #include "rendererErrors.h"
-#include "constants.h"
 
 
-// glfw
-/* Submit the drawing commands */
-uint32_t WIDTH = 800;
+
+
+// error callback function, executes on every error encounter
+static void onRendererError(const RendererErrorInfo *info, void *userData) {
+	FILE *log = (FILE *)userData;
+
+	fprintf(log, "[renderer] %s (%s:%d) code=%d raw=%d — %s\n",
+		info->function,
+		info->file,
+		info->line,
+		info->result,
+		info->rawCode,
+		info->message);
+}
+const RendererErrorInfo *rendererGetLastError(void) {
+	return &gLastError;
+}
+thread_local RendererErrorInfo gLastError;
+pFnRendererErrorCallback gErrorCb;
+void *gErrorCbUserdata;
+
+
+
+
+
+#ifdef VALIDATION 
+const bool enableValidationLayers = true;
+#else 
+const bool enableValidationLayers = false;
+#endif
+#ifdef PORTABILITY
+const bool usePortability = true;
+#else
+const bool usePortability = false;
+#endif
+
+
+
+
+unsigned int currentFrameInFlight = 0;
+uint32_t WIDTH 	= 800;
 uint32_t HEIGHT = 600;
+
+
+
+
+/* All global variables with external linkage are defined here. 
+ * Every other global variable has internal linkage.
+ * Above every variable, the translation unit where they are 
+ * "truly" defined is written */
+
+// initWindow
 GLFWwindow *window = nullptr;
 
-// init vulkan
+// initVulkan
 VkInstance instance = VK_NULL_HANDLE;
 VkSurfaceKHR surface = VK_NULL_HANDLE;
 VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
@@ -27,7 +77,6 @@ VkQueue queue = VK_NULL_HANDLE;
 uint32_t queueFamilyIndex = 0;
 VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
 
-// swapchain
 VkSwapchainKHR swapChain = VK_NULL_HANDLE;
 VkImage *swapChainImages = VK_NULL_HANDLE;
 uint32_t swapChainImagesCount = 0;
@@ -35,22 +84,28 @@ VkSurfaceFormatKHR swapChainSurfaceFormat = {0};
 VkExtent2D swapChainExtent = {0};
 VkImageView *swapChainImageViews = VK_NULL_HANDLE;
 
-// graphics pipeline
-VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
+// graphicsPipeline
 VkPipeline graphicsPipeline = VK_NULL_HANDLE;
+VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {0};
+VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {0};
 
-// command pool
+// commandBuffers
 VkCommandPool commandPool = VK_NULL_HANDLE;
 VkCommandPool transferCommandPool = VK_NULL_HANDLE;
-
-
-// frame in flight
-unsigned int currentFrameInFlight = 0;
-
+VkCommandBuffer transferCommandBuffer = VK_NULL_HANDLE;
 VkCommandBuffer *pCommandBuffers = nullptr;
-/* One command buffer for every frame in flight (FIF) */
 
+// vertexBuffers
+VkDeviceSize indexOffset = 0;
+VkDeviceSize vertexBufferSize = 0;
+VkBuffer vertexBuffer = VK_NULL_HANDLE;
+int numVertices = 0;
+int numIndices = 0;
+
+
+
+// syncObjects
 VkSemaphore *pAcquiredImageSemaphores = nullptr;
 /* This semaphore is signaled when a swapchain image is acquired.
  * There are as many of these as frames in flight.
@@ -74,21 +129,12 @@ VkSemaphore *pRenderingDoneSemaphores = nullptr;
  * Remember that draw commands wait on an image being available and thus implicitly
  * also wait for this semaphore of that image to be unsignaled. */
 
-int numVertices;
-int numIndices;
-VkBuffer vertexBuffer = VK_NULL_HANDLE;
-VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
-VkBuffer indexBuffer = VK_NULL_HANDLE;
-VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
 
-VkBuffer *pUniformBuffers = nullptr;
-VkDeviceMemory *pUniformBuffersMemories = nullptr;
-void **ppUniformBufferMemoryMapped = nullptr;
+// pushConstants
+struct pushConstants pushConstants = {0};
+/*--------------------------------------------------------------------------------*/
 
-VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
-VkDescriptorSet *pDescriptorSets = nullptr;
-
-void drawFrame();
+extern void drawFrame();
 static void mainLoop() {
 	while(!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
@@ -96,171 +142,48 @@ static void mainLoop() {
 	}
 	vkDeviceWaitIdle(device);
 }
-extern void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
-extern void destroySyncObjects();
-extern void destroyUniformBuffers();
-extern void destroyDescriptors();
+
+struct functionStack cleanupFunctions = {0};
 static void cleanUp() {
-	destroyDescriptors();
-
-	destroyUniformBuffers();
-	vkFreeMemory(device, indexBufferMemory, nullptr);
-	vkDestroyBuffer(device, indexBuffer, nullptr);
-	vkFreeMemory(device, vertexBufferMemory, nullptr);
-	vkDestroyBuffer(device, vertexBuffer, nullptr);
-	// sync objects
-	destroySyncObjects();
-
-	// command pool
-	vkDestroyCommandPool(device, transferCommandPool, nullptr);
-	vkDestroyCommandPool(device, commandPool, nullptr);
-	free(pCommandBuffers);
-	pCommandBuffers = nullptr;
-
-	// graphics pipeline
-	vkDestroyPipeline(device, graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
-
-	// swapchain image views
-	for (uint32_t i = 0; i < swapChainImagesCount; i++) {
-		vkDestroyImageView(device, swapChainImageViews[i], nullptr);
-	}
-	swapChainImageViews = nullptr;
-
-	// swapchain
-	vkDestroySwapchainKHR(device, swapChain, nullptr);
-	swapChainImages = nullptr;
-
-	// device
-	vkDestroyDevice(device, nullptr);
-	device = nullptr;
-
-	// surface
-	vkDestroySurfaceKHR(instance, surface, nullptr);
-	surface = nullptr;
-
-	// instance
-	destroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-	vkDestroyInstance(instance, nullptr);
-	instance = nullptr;
-
-	// glfw
-	glfwDestroyWindow(window);
-	window = nullptr;
-	glfwTerminate();
+	functionStack_call(&cleanupFunctions);
 }
 
-extern void initWindow();
-extern void initVulkan();
-extern void initGraphicsPipeline();
-extern void initCommandBuffers();
-extern void initSyncObjects();
-extern void initVertices();
-extern void initUniformBuffers();
-extern void initDescriptors();
-static void run() {
-	initWindow();
-	initVulkan();
-	initGraphicsPipeline();
-	initCommandBuffers();
-	initSyncObjects();
-	initVertices();
-	initUniformBuffers();
-	initDescriptors();
+extern RendererResult initWindow();
+extern RendererResult initVulkan();
+extern RendererResult initGraphicsPipelineCreateInfo();
+extern RendererResult initCommandBuffers();
+extern RendererResult initSyncObjects();
+extern RendererResult initShaders();
+extern RendererResult initVertices();
+extern RendererResult initPushConstants();
+extern RendererResult createGraphicsPipeline();
+static RendererResult run() {
+	RendererResult result;
+
+	RR_TRY(initWindow(), result, cleanup);
+	RR_TRY(initVulkan(), result, cleanup);
+	RR_TRY(initGraphicsPipelineCreateInfo(), result, cleanup);
+	RR_TRY(initCommandBuffers(), result, cleanup);
+	RR_TRY(initSyncObjects(), result, cleanup);
+	RR_TRY(initShaders(), result, cleanup);
+	RR_TRY(initVertices(), result, cleanup);
+	RR_TRY(initPushConstants(), result, cleanup);
+	RR_TRY(createGraphicsPipeline(), result, cleanup);
+
 	mainLoop();
+
+cleanup:
 	cleanUp();
+	return result;
 }
+
 
 int main() {
+	gErrorCb = onRendererError;
+	gErrorCbUserdata = stderr;
+	gLastError = (RendererErrorInfo) {0}; 
+
 	run();
-	exit(RENDERER_SUCCESS);
-}
 
-extern void recordCommandBuffer(uint32_t);
-void updateUniformBuffers();
-void drawFrame() {
-	VkResult result;
-
-	/* Before recording into the command buffer 
-	 * of the current FIF, make sure it has been executed */
-	result = vkWaitForFences(device, 1, pDrawingDoneFences + currentFrameInFlight, VK_TRUE, UINT64_MAX);
-	handleVulkanError(result, "vkWaitForFences", true);
-	result = vkResetFences(device, 1, pDrawingDoneFences + currentFrameInFlight);
-	handleVulkanError(result, "vkResetFences", true);
-
-	/* Acquire the next image in the swapchain to be presented.
-	 * Signal when image is acquired */
-	uint32_t nextImageIndex;
-	result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, pAcquiredImageSemaphores[currentFrameInFlight], VK_NULL_HANDLE, &nextImageIndex);
-	handleVulkanError(result, "vkAcquireNextImageKHR", true);
-
-
-	/* Start recording the command buffer for the current FIF 
-	 * with the next image in swapchain as attachment */
-	recordCommandBuffer(nextImageIndex);
-
-	VkCommandBufferSubmitInfo commandBufferSubmitInfo = {
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-		.pNext = nullptr,
-		.commandBuffer = pCommandBuffers[currentFrameInFlight],
-		.deviceMask = 0
-	};
-
-	/* Do not start executing the command buffer commands
-	 * for color attachment until the next image
-	 * has been acquired */
-	VkSemaphoreSubmitInfo waitForImageAcquisitionSemaphoreInfo = {
-		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-		.pNext = nullptr,
-		.semaphore = pAcquiredImageSemaphores[currentFrameInFlight],
-		.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-		.deviceIndex = 0
-	};
-
-	/* Signal the render complete semaphore for the current image
-	 * after all graphics commands in the buffer (and all the commands 
-	 * submitted prior to the queue) is done */
-	VkSemaphoreSubmitInfo signalRenderCompleteSemaphoreInfo = {
-		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-		.pNext = nullptr,
-		.semaphore = pRenderingDoneSemaphores[nextImageIndex],
-		.stageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-		.deviceIndex = 0
-	};
-
-	VkSubmitInfo2 submitInfo = {
-		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-		.pNext = nullptr,
-		.waitSemaphoreInfoCount = 1,
-		.pWaitSemaphoreInfos = &waitForImageAcquisitionSemaphoreInfo,
-		.commandBufferInfoCount = 1,
-		.pCommandBufferInfos = &commandBufferSubmitInfo,
-		.signalSemaphoreInfoCount = 1,
-		.pSignalSemaphoreInfos = &signalRenderCompleteSemaphoreInfo
-	};
-
-	updateUniformBuffers();
-	/* Submit the drawing commands.
-	 * Signal the drawFence when the commands finish executing */
-	result = vkQueueSubmit2(queue, 1, &submitInfo, pDrawingDoneFences[currentFrameInFlight]);
-	handleVulkanError(result, "vkQueueSubmit2", true);
-
-	/* Wait for the rendering to be done for the current FIF, 
-	 * to the next swapchain image. Present the render to the next image */
-	VkPresentInfoKHR presentInfo = {
-		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-		.pNext = nullptr,
-		.waitSemaphoreCount = 1,
-		.pWaitSemaphores = pRenderingDoneSemaphores + nextImageIndex,
-		.swapchainCount = 1,
-		.pSwapchains = &swapChain,
-		.pImageIndices = &nextImageIndex,
-		.pResults = nullptr
-	};
-
-	result = vkQueuePresentKHR(queue, &presentInfo);
-	handleVulkanError(result, "vkQueuePresentKHR", true);
-
-	currentFrameInFlight = (currentFrameInFlight + 1) % MAX_FRAMES_IN_FLIGHT;
+	return 0;
 }

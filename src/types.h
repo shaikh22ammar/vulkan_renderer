@@ -3,9 +3,8 @@
 
 #include <cglm/cglm.h>
 
-struct Vertex {
-	vec2 pos;
-	vec3 color;
+struct pushConstants {
+	mat4 mvp;
 };
 
 #endif
