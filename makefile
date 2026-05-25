@@ -56,17 +56,23 @@ CXX_SRCS = $(shell find $(SRC_DIR) -name "*.cpp" -not -name "_*")
 $(info C sources:   $(C_SRCS))
 $(info C++ sources: $(CXX_SRCS))
 
-OBJS_DIR = $(BUILD_DIR)/objs
-C_OBJS   = $(patsubst $(SRC_DIR)/%, $(OBJS_DIR)/%, $(C_SRCS:.c=.o))
-CXX_OBJS = $(patsubst $(SRC_DIR)/%, $(OBJS_DIR)/%, $(CXX_SRCS:.cpp=.o))
-OBJS     = $(C_OBJS) $(CXX_OBJS)
-DEPS     = $(OBJS:.o=.d)
+OBJS_DIR	= $(BUILD_DIR)/objs
+C_OBJS		= $(patsubst $(SRC_DIR)/%, $(OBJS_DIR)/%, $(C_SRCS:.c=.o))
+CXX_OBJS	= $(patsubst $(SRC_DIR)/%, $(OBJS_DIR)/%, $(CXX_SRCS:.cpp=.o))
+OBJS		= $(C_OBJS) $(CXX_OBJS)
+DEPS		= $(OBJS:.o=.d)
 
-SLANG_DIR     = $(SRC_DIR)/shaders
-SLANG_SHADERS = $(wildcard $(SLANG_DIR)/*.slang)
+SLANG_DIR	= $(SRC_DIR)/shaders
+SLANG_SHADERS	= $(wildcard $(SLANG_DIR)/*.slang)
 $(info Shaders: $(SLANG_SHADERS))
-SPV_DIR     = $(BUILD_DIR)/shaders
-SPV_SHADERS = $(patsubst $(SLANG_DIR)/%, $(SPV_DIR)/%, $(SLANG_SHADERS:.slang=.spv))
+SPV_DIR		:= assets/shaders
+SPV_SHADERS	= $(patsubst $(SLANG_DIR)/%, $(SPV_DIR)/%, $(SLANG_SHADERS:.slang=.spv))
+
+COMMON_FLAGS += -DSHADER_DIR=\"$(SPV_DIR)\"
+
+
+
+
 
 ### Targets
 all: $(TARGET)
