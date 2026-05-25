@@ -162,62 +162,6 @@ static RendererResult createInstance() {
 
 
 
-/* Debug */
-static VkResult createDebugUtilsMessengerEXT(
-		const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, 
-		const VkAllocationCallbacks* pAllocator,
-		VkDebugUtilsMessengerEXT* pDebugMessenger) {
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-    } else {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-}
-
-static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-	[[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-	[[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT messageType,
-	[[maybe_unused]] const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-	void* pUserData) {
-
-	fprintf(pUserData, "validation layer: %s\n", pCallbackData->pMessage);
-
-	return VK_FALSE;
-}
-
-extern VkDebugUtilsMessengerEXT debugMessenger;
-static RendererResult setupDebugMessenger() {
-	if (!enableValidationLayers) return RENDERER_SUCCESS;
-
-	VkDebugUtilsMessengerCreateInfoEXT createInfo = {0};
-	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-	createInfo.messageSeverity = 
-		VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT 
-		| VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT 
-		| VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-	createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT 
-		| VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT 
-		| VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-	createInfo.pfnUserCallback = debugCallback;
-	createInfo.pUserData = stderr; // Optional
-	
-	VK_CHECK(createDebugUtilsMessengerEXT(&createInfo, nullptr, &debugMessenger));
-
-	return RENDERER_SUCCESS;
-}
-
-void destroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
-	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-	if (func != nullptr) {
-		func(instance, debugMessenger, pAllocator);
-	}
-}
-
-
-
-
-
 
 extern GLFWwindow *window;
 extern VkSurfaceKHR surface;
@@ -668,6 +612,84 @@ RendererResult createImageViews() {
 	return RENDERER_SUCCESS;
 }
 
+
+/* Debug */
+
+#ifndef NDEBUG
+VKAPI_ATTR VkResult VKAPI_CALL vkCreateDebugUtilsMessengerEXT(
+		VkInstance                                  instance,
+		const VkDebugUtilsMessengerCreateInfoEXT*   pCreateInfo,
+		const VkAllocationCallbacks*                pAllocator,
+		VkDebugUtilsMessengerEXT*                   pMessenger) {
+
+	auto f = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+	if (!f) return VK_ERROR_EXTENSION_NOT_PRESENT;
+	return f(instance, pCreateInfo, pAllocator, pMessenger);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkDestroyDebugUtilsMessengerEXT(
+		VkInstance instance, VkDebugUtilsMessengerEXT messenger, const VkAllocationCallbacks *pAllocator){
+	auto f = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+	return f(instance, messenger, pAllocator);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL vkSetDebugUtilsObjectNameEXT(
+		VkDevice device,
+		const VkDebugUtilsObjectNameInfoEXT* pNameInfo
+		) {
+	auto f = (PFN_vkSetDebugUtilsObjectNameEXT) vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT");
+	if (!f) return VK_ERROR_EXTENSION_NOT_PRESENT;
+	return f(device, pNameInfo);
+}
+
+RendererResult rrSetDebugObjectName (
+		VkObjectType objectType,
+		uint64_t objectHandle,
+		const char *objectName
+		) {
+	VkDebugUtilsObjectNameInfoEXT nameInfo = {
+		.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+		.pNext = nullptr,
+		.objectType = objectType,
+		.objectHandle = objectHandle,
+		.pObjectName = objectName
+	};
+	VK_CHECK(vkSetDebugUtilsObjectNameEXT(device, &nameInfo));
+	return RENDERER_SUCCESS;
+}
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+	[[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	[[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT messageType,
+	[[maybe_unused]] const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+	void* pUserData) {
+
+	fprintf(pUserData, "validation layer: %s\n", pCallbackData->pMessage);
+
+	return VK_FALSE;
+}
+
+extern VkDebugUtilsMessengerEXT debugMessenger;
+static RendererResult setupDebugMessenger() {
+	VkDebugUtilsMessengerCreateInfoEXT createInfo = {0};
+	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+	createInfo.messageSeverity = 
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT 
+		| VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT 
+		| VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+	createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT 
+		| VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT 
+		| VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+	createInfo.pfnUserCallback = debugCallback;
+	createInfo.pUserData = stderr;
+	
+	VK_CHECK(vkCreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger));
+
+	return RENDERER_SUCCESS;
+}
+
+#endif
+
 #include "utils/functionQueue.h"
 extern struct functionStack cleanupFunctions;
 
@@ -690,7 +712,9 @@ static void destroyThings() {
 	surface = nullptr;
 
 	// instance
-	destroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+#ifndef NDEBUG
+	vkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+#endif
 	vkDestroyInstance(instance, nullptr);
 	instance = nullptr;
 }
@@ -702,7 +726,9 @@ static void destroyThings() {
 
 RendererResult initVulkan() {
 	RR_TRY(createInstance());
+#ifndef NDEBUG
 	RR_TRY(setupDebugMessenger());
+#endif
 	RR_TRY(createSurface());
 	RR_TRY(pickPhysicalDevice()); 
 	RR_TRY(createLogicalDevice()); 

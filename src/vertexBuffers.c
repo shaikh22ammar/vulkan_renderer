@@ -264,6 +264,14 @@ static void destroyBufferAndMemories() {
 	vkFreeMemory(device, vertexBufferMemory, nullptr);
 }
 
+#ifndef NDEBUG
+extern RendererResult rrSetDebugObjectName (
+		VkObjectType objectType,
+		uint64_t objectHandle,
+		const char *objectName
+		);
+#endif
+
 extern struct functionStack cleanupFunctions;
 RendererResult initVertices() {
 	constexpr int numFunctions = 3;
@@ -282,7 +290,7 @@ RendererResult initVertices() {
 	vertices = NULL;
 
 #ifndef NDEBUG
-	setBufferLabel(device, vertexBuffer, "Vertex buffer");
+	rrSetDebugObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t) vertexBuffer, "vertex buffer");
 #endif
 
 	return RENDERER_SUCCESS;
