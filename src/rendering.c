@@ -6,6 +6,10 @@
 #include <cglm/cglm.h>
 #include "types.h"
 
+#include <math.h>
+#include <time.h>
+#include "utils/matrices.h"
+
 extern unsigned int currentFrameInFlight;
 
 extern VkQueue queue; 
@@ -31,7 +35,6 @@ extern VkFence *pDrawingDoneFences;
 extern VkSemaphore *pRenderingDoneSemaphores;
 
 
-extern struct pushConstants pushConstants;
 
 static void transitionImageLayout(
 		uint32_t imageIndex,
@@ -76,6 +79,42 @@ static void transitionImageLayout(
 	dependencyInfo.pImageMemoryBarriers = &imageMemoryBarrier;
 
 	vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
+}
+
+void updatePushConstants(struct pushConstants *pc) {
+
+	static struct timespec startTime;
+	static bool initialized = false;
+	if (!initialized) {
+		clock_gettime(CLOCK_MONOTONIC, &startTime);
+		initialized = true;
+	}
+
+	struct timespec currentTime;
+	clock_gettime(CLOCK_MONOTONIC, &currentTime);
+
+	double elapsed = (currentTime.tv_sec  - startTime.tv_sec) +
+		    (currentTime.tv_nsec - startTime.tv_nsec) / 1e9;
+
+	float time = (float) fmod(elapsed, 360.0 / 90.0);
+
+	mat4 model;
+	vec3 down = {0.0f, 1.0f, 0.0f};
+	glm_mat4_identity(model);
+	glm_rotate_x(model, glm_rad(-90), model);
+	glm_rotate_z(model, glm_rad(90)*time, model);
+
+	// view the 2d object from above and behind
+	vec3 eye = {0.0f, -1.0f, -2.0f};
+	vec3 center = {0, 0, 0};
+	mat4 view;
+	glm_lookat_vk(eye, center, down, view);
+
+	mat4 persp;
+	glm_perspective_vk(45.0f, (float) swapChainExtent.width / swapChainExtent.height, 0.01f, 10.0f, persp);
+
+	glm_mul(view, model, pc->mvp);
+	glm_mat4_mul(persp, pc->mvp, pc->mvp);
 }
 
 static RendererResult recordCommandBuffer(uint32_t imageIndex) {
@@ -160,7 +199,8 @@ static RendererResult recordCommandBuffer(uint32_t imageIndex) {
 	vkCmdBindIndexBuffer(commandBuffer, vertexBuffer, indexOffset, VK_INDEX_TYPE_UINT16);
 
 
-	struct pushConstants pc = pushConstants;
+	struct pushConstants pc;
+	updatePushConstants(&pc);
 	vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &pc);
 	//vkCmdPushConstants2(commandBuffer, &pushConstantsInfo);
 
@@ -185,7 +225,6 @@ static RendererResult recordCommandBuffer(uint32_t imageIndex) {
 	return RENDERER_SUCCESS;
 }
 
-extern void updatePushConstants();
 RendererResult drawFrame() {
 	/* Before recording into the command buffer 
 	 * of the current FIF, make sure it has been executed */
@@ -200,7 +239,6 @@ RendererResult drawFrame() {
 
 	/* Start recording the command buffer for the current FIF 
 	 * with the next image in swapchain as attachment */
-	updatePushConstants();
 	recordCommandBuffer(nextImageIndex);
 
 	VkCommandBufferSubmitInfo commandBufferSubmitInfo = {

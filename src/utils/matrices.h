@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include <cglm/clipspace/persp_lh_zo.h>
+#include <cglm/clipspace/view_lh.h>
 
 static inline void glm_perspective_vk(float fovy, float aspect, float nearVal, float farVal, mat4 dest) {
 	/* A perspective matrix based on Vulkan's coordinate system:
@@ -12,5 +13,10 @@ static inline void glm_perspective_vk(float fovy, float aspect, float nearVal, f
 	 * as far as the perspective matrix is concerned */
 	glm_perspective_lh_zo(fovy, aspect, nearVal, farVal, dest);
 }
+
+static inline void glm_lookat_vk(float *eye, float *center, float *down, vec4 *dest) {
+	glm_lookat_lh(eye, center, down, dest);
+}
+
 
 #endif

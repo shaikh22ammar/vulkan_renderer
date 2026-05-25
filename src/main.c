@@ -84,7 +84,7 @@ VkSurfaceFormatKHR swapChainSurfaceFormat = {0};
 VkExtent2D swapChainExtent = {0};
 VkImageView *swapChainImageViews = VK_NULL_HANDLE;
 
-// graphicsPipeline
+// graphicsPipeline vertexBuffer pushConstants
 VkPipeline graphicsPipeline = VK_NULL_HANDLE;
 VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {0};
 VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
