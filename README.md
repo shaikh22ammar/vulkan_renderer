@@ -21,4 +21,4 @@ GLFW, Vulkan SDK, and pkg-config are required dependencies.
 Non-POSIX systems are not supprted.
 1. Use `make isMacOS = false` for devices that natively support Vulkan, otherwise `make` on MacOS, for a debug build. 
 2. Use `make [isMacOS = ...] isDebug = false` for optimised build without validation layers.
-3. Run using `./run,sh`
+3. Run using `./run.sh`

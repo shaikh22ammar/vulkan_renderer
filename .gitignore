@@ -1,6 +1,9 @@
 # Build files
 /build/
 
+# Asset dir
+/assets/
+
 # Object files
 *.o
 
