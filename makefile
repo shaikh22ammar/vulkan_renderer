@@ -28,10 +28,10 @@ COMMON_FLAGS += -MMD -MP
 COMMON_FLAGS += -Isrc
 COMMON_FLAGS += $(PKGS_INC)
 ifeq ($(isMacOS),true)
-COMMON_FLAGS += -DMAC_OS
+COMMON_FLAGS += -DMAC_OS -DPORTABILITY
 endif
 ifeq ($(isDebug),true)
-COMMON_FLAGS += -O0 -g
+COMMON_FLAGS += -O0 -g -DVALIDATION
 LDFLAGS += -g
 else
 COMMON_FLAGS += -O3 -DNDEBUG
@@ -51,9 +51,8 @@ SCFLAGS = -target spirv -profile spirv_1_4 -emit-spirv-directly -fvk-use-entrypo
 BUILD_DIR = build
 TARGET = $(BUILD_DIR)/renderer
 SRC_DIR = src
-
-C_SRCS   = $(wildcard $(SRC_DIR)/*.c)
-CXX_SRCS = $(wildcard $(SRC_DIR)/*.cpp)
+C_SRCS   = $(shell find $(SRC_DIR) -name "*.c"   -not -name "_*")
+CXX_SRCS = $(shell find $(SRC_DIR) -name "*.cpp" -not -name "_*")
 $(info C sources:   $(C_SRCS))
 $(info C++ sources: $(CXX_SRCS))
 
@@ -76,9 +75,11 @@ $(TARGET): $(OBJS) $(SPV_SHADERS) | $(BUILD_DIR)
 	$(CXX) -o $@ $(OBJS) $(LDFLAGS)
 
 $(OBJS_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJS_DIR)
+	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 $(OBJS_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJS_DIR)
+	mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
 $(SPV_DIR)/triangle.spv: $(SLANG_DIR)/triangle.slang | $(SPV_DIR)
@@ -86,9 +87,6 @@ $(SPV_DIR)/triangle.spv: $(SLANG_DIR)/triangle.slang | $(SPV_DIR)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
-
-$(OBJS_DIR): | $(BUILD_DIR)
-	mkdir -p $(OBJS_DIR)
 
 $(SPV_DIR):
 	mkdir -p $(SPV_DIR)

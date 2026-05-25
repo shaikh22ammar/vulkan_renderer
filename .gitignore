@@ -7,6 +7,9 @@
 # SPIR-V compiled shaders
 *.spv
 
+compile_commands.json
+*.sh
+
 # Junk
 .DS_Store
 /.cache/

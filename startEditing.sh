@@ -1,3 +1,2 @@
 #!/bin/sh
-
-vi src/*.c src/*.cpp
+vi $(find src \( -name "*.c" -o -name "*.cpp" \) -not -name "_*")
