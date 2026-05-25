@@ -5,8 +5,6 @@
 #include "rendererErrors.h"
 #include "utils/functionQueue.h"
 
-#define SHADER_DIR "shaders/"
-
 extern VkDevice device;
 extern VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo;
 
@@ -41,8 +39,8 @@ static void destroyShaders() {
 RendererResult initShaders() {
 	RendererResult result = RENDERER_SUCCESS;
 
-	char *filepath = SHADER_DIR "triangle.spv";
-	uint32_t *shaderCode = nullptr;
+        char *filepath = SHADER_DIR "/triangle.spv";
+        uint32_t *shaderCode = nullptr;
 	size_t shaderCodeSize = 0;
 	RF_CHECK(readFile(filepath, nullptr, &shaderCodeSize));
 	shaderCode = malloc(sizeof(char)*shaderCodeSize);
