@@ -19,6 +19,7 @@ extern VkCommandBuffer transferCommandBuffer;
 
 struct Vertex {
 	vec2 pos;
+	vec2 uv;
 	vec3 color;
 };
 
@@ -29,10 +30,6 @@ const VkIndexType indexType = VK_INDEX_TYPE_UINT16;
 
 
 extern VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo;
-static constexpr int VERTEX_INPUT_ATTR_COUNT = 2;
-static VkVertexInputBindingDescription vertexInputBindingDescription = {0};
-static VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo = {0};
-static VkVertexInputAttributeDescription pVertexInputAttributeDescriptions[VERTEX_INPUT_ATTR_COUNT];
 
 
 
@@ -105,18 +102,24 @@ extern void setBufferLabel(VkDevice device, VkBuffer buffer, const char* name);
 	vertices[1].color[0] = 0.0f;
 	vertices[1].color[1] = 1.0f;
 	vertices[1].color[2] = 0.0f;
+	vertices[1].uv[0] = 1;
+	vertices[1].uv[1] = 0;
 
 	vertices[2].pos[0] = 0.5f;
 	vertices[2].pos[1] = 0.5f;
 	vertices[2].color[0] = 0.0f;
 	vertices[2].color[1] = 0.0f;
 	vertices[2].color[2] = 1.0f;
+	vertices[2].uv[0] = 1;
+	vertices[2].uv[1] = 1;
 
 	vertices[3].pos[0] = -0.5f;
 	vertices[3].pos[1] = 0.5f;
 	vertices[3].color[0] = 1.0f;
 	vertices[3].color[1] = 1.0f;
 	vertices[3].color[2] = 1.0f;
+	vertices[3].uv[0] = 0;
+	vertices[3].uv[1] = 1;
 
 	numIndices = 6;
 	vertexIndices = malloc(numIndices * sizeof(uint16_t));
@@ -133,6 +136,11 @@ extern void setBufferLabel(VkDevice device, VkBuffer buffer, const char* name);
 }
 
 static RendererResult updateVertexInputState() {
+	static constexpr int VERTEX_INPUT_ATTR_COUNT = 2;
+	static VkVertexInputBindingDescription vertexInputBindingDescription = {0};
+	static VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo = {0};
+	static VkVertexInputAttributeDescription pVertexInputAttributeDescriptions[VERTEX_INPUT_ATTR_COUNT];
+
 	vertexInputBindingDescription.binding = 0;
 	vertexInputBindingDescription.stride = sizeof(struct Vertex);
 	vertexInputBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -143,8 +151,8 @@ static RendererResult updateVertexInputState() {
 	pVertexInputAttributeDescriptions[0].offset = offsetof(struct Vertex, pos);
 	pVertexInputAttributeDescriptions[1].binding = 0;
 	pVertexInputAttributeDescriptions[1].location = 1;
-	pVertexInputAttributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-	pVertexInputAttributeDescriptions[1].offset = offsetof(struct Vertex, color);
+	pVertexInputAttributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
+	pVertexInputAttributeDescriptions[1].offset = offsetof(struct Vertex, uv);
 
 	vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	vertexInputStateCreateInfo.pNext = nullptr;

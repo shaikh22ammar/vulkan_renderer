@@ -55,22 +55,20 @@ RendererResult initShaders() {
 
 	constexpr int shaderStagesCount = 2;
 
-	static VkPipelineShaderStageCreateInfo vertShaderStageInfo = {0};
-	static VkPipelineShaderStageCreateInfo fragShaderStageInfo = {0};
-
-	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertShaderStageInfo.pNext = nullptr;
-	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vertShaderStageInfo.module = shaderModule;
-	vertShaderStageInfo.pName = "vertMain";
-
-	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	fragShaderStageInfo.pNext = nullptr;
-	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	fragShaderStageInfo.module = shaderModule;
-	fragShaderStageInfo.pName = "fragMain";
-
-
+	VkPipelineShaderStageCreateInfo vertShaderStageInfo = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+		.pNext = nullptr,
+		.stage = VK_SHADER_STAGE_VERTEX_BIT,
+		.module = shaderModule,
+		.pName = "vertMain"
+	};
+	VkPipelineShaderStageCreateInfo fragShaderStageInfo = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+		.pNext = nullptr,
+		.stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+		.module = shaderModule,
+		.pName = "fragMain"
+	};
 	static VkPipelineShaderStageCreateInfo shaderStages[shaderStagesCount];
 	shaderStages[0] = vertShaderStageInfo;
 	shaderStages[1] = fragShaderStageInfo;

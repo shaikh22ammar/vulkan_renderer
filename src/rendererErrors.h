@@ -11,16 +11,17 @@ extern "C" {
 
 // renderer return codes
 typedef enum {
-	RENDERER_SUCCESS 		=  0,
-	RENDERER_ERR_VULKAN 		= -1,
-	RENDERER_ERR_GLFW 		= -2,
-	RENDERER_ERR_INVALID_ARG 	= -3,
-	RENDERER_ERR_NOT_INITIALIZED 	= -4,
-	RENDERER_ERR_OUT_OF_MEMORY 	= -5,
-	RENDERER_ERR_SHADERS 		= -6,
-	RENDERER_ERR_READ_FILE 		= -7,
-	RENDERER_ERR_INCOMPATIBILITY 	= -8,
-	RENDERER_ERR_UNKNOWN 		= -80,
+	RENDERER_SUCCESS =  0,
+	RENDERER_ERR_VULKAN = -1,
+	RENDERER_ERR_GLFW = -2,
+	RENDERER_ERR_INVALID_ARG = -3,
+	RENDERER_ERR_NOT_INITIALIZED = -4,
+	RENDERER_ERR_OUT_OF_MEMORY = -5,
+	RENDERER_ERR_SHADERS = -6,
+	RENDERER_ERR_READ_FILE = -7,
+	RENDERER_ERR_INCOMPATIBILITY= -8,
+	RENDERER_ERR_IMAGE = -9,
+	RENDERER_ERR_UNKNOWN = -80,
 } RendererResult;
 
 static inline const char* rendererResultString(RendererResult r) {
@@ -55,18 +56,21 @@ static inline const char* rendererResultString(RendererResult r) {
 		case RENDERER_ERR_UNKNOWN:
 			return "RENDERER_ERR_UNKNOWN";
 			break;
+                case RENDERER_ERR_IMAGE:
+			return "RENDERER_ERR_IMAGE"; 
+                  	break;
                 }
         return "";
 }
 
 // error info
 typedef struct RendererErrorInfo {
-	RendererResult 	result; 
-	int 		rawCode;	// raw vulkan error
-	const char 	*function;	// __func__ name where error was detected
-	const char 	*file;		// __FILE__ name where error was detected	
-	int 		line;		// __LINE__ number where error was detected
-	char 		message[256];	// some message
+	RendererResult result; 
+	int rawCode;	// raw vulkan error
+	const char *function;	// __func__ name where error was detected
+	const char *file;		// __FILE__ name where error was detected	
+	int line;		// __LINE__ number where error was detected
+	char message[256];	// some message
 } RendererErrorInfo;
 
 

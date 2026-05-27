@@ -72,6 +72,7 @@ GLFWwindow *window = nullptr;
 VkInstance instance = VK_NULL_HANDLE;
 VkSurfaceKHR surface = VK_NULL_HANDLE;
 VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+VkPhysicalDeviceProperties2 physicalDeviceProperties = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};
 VkDevice device = VK_NULL_HANDLE;
 VkQueue queue = VK_NULL_HANDLE; 
 uint32_t queueFamilyIndex = 0;
@@ -103,32 +104,17 @@ VkBuffer vertexBuffer = VK_NULL_HANDLE;
 int numVertices = 0;
 int numIndices = 0;
 
-
-
 // syncObjects
 VkSemaphore *pAcquiredImageSemaphores = nullptr;
-/* This semaphore is signaled when a swapchain image is acquired.
- * There are as many of these as frames in flight.
- * It is unsignaled through draw commands execution. 
- * It exists to ensure that before a draw command begins execution,
- * the swapchain image is actually acquired. */
 VkFence *pDrawingDoneFences = nullptr;
-/* This fence is signaled when the draw commands of a FIF finish execution. 
- * There are as many of these as frames in flight.
- * It exists to ensure that the CPU waits before 
- * reseting and re-recording the buffer of the draw command
- * of that particular FIF*/
 VkSemaphore *pRenderingDoneSemaphores = nullptr;
-/* This semaphore is signaled when the draw commands of a FIF finish execution.
- * There are as many of these as swapchain images.
- * The draw signals the semaphore corresponding to the swapchain image they are 
- * attached to. It is unsignaled by presentation operation.
- * Note that if this was indexed according to FIF then when singaling it 
- * through the draw commands, it is possible that it's still in use (signaled)
- * by the previous presentation operation. 
- * Remember that draw commands wait on an image being available and thus implicitly
- * also wait for this semaphore of that image to be unsignaled. */
 
+// image
+VkImageView textureImageView = VK_NULL_HANDLE; 
+VkSampler textureImageSampler = VK_NULL_HANDLE;
+
+// descriptors
+VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
 
 // pushConstants
 struct pushConstants pushConstants = {0};
@@ -155,6 +141,8 @@ extern RendererResult initCommandBuffers();
 extern RendererResult initSyncObjects();
 extern RendererResult initShaders();
 extern RendererResult initVertices();
+extern RendererResult initTexture();
+extern RendererResult initDescriptors();
 extern RendererResult initPushConstants();
 extern RendererResult createGraphicsPipeline();
 static RendererResult run() {
@@ -167,6 +155,8 @@ static RendererResult run() {
 	RR_TRY(initSyncObjects(), result, cleanup);
 	RR_TRY(initShaders(), result, cleanup);
 	RR_TRY(initVertices(), result, cleanup);
+	RR_TRY(initTexture(), result, cleanup);
+	RR_TRY(initDescriptors(), result, cleanup);
 	RR_TRY(initPushConstants(), result, cleanup);
 	RR_TRY(createGraphicsPipeline(), result, cleanup);
 

@@ -237,7 +237,8 @@ static uint32_t isDeviceSuitable(VkPhysicalDevice currPhysicalDevice) {
 
 	vkGetPhysicalDeviceFeatures2(currPhysicalDevice, &deviceFeatures);
 	VkBool32 isAllFeaturesSupported = 
-		deviceVulkan11Features.shaderDrawParameters 
+		deviceFeatures.features.samplerAnisotropy
+		&& deviceVulkan11Features.shaderDrawParameters 
 		&& deviceVulkan13Features.dynamicRendering 
 		&& deviceVulkan13Features.synchronization2
 		&& deviceVulkanExtendedDynamicStateFeaturesEXT.extendedDynamicState;
@@ -316,6 +317,7 @@ cleanup:
 }
 
 extern VkPhysicalDevice physicalDevice;
+extern VkPhysicalDeviceProperties2 physicalDeviceProperties;
 static RendererResult pickPhysicalDevice() {
 	uint32_t physicalDevicesCount = 0;
 	VK_CHECK(vkEnumeratePhysicalDevices(instance, &physicalDevicesCount, nullptr));
@@ -348,11 +350,8 @@ static RendererResult pickPhysicalDevice() {
 		return RENDERER_ERR_INCOMPATIBILITY;
 	}
 
-	VkPhysicalDeviceProperties2 chosenDeviceProperies;
-	chosenDeviceProperies.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-	chosenDeviceProperies.pNext = nullptr;
-	vkGetPhysicalDeviceProperties2(physicalDevice, &chosenDeviceProperies);
-	printf("Picked device %d: %s\n", chosenDeviceProperies.properties.deviceID, chosenDeviceProperies.properties.deviceName);
+	vkGetPhysicalDeviceProperties2(physicalDevice, &physicalDeviceProperties);
+	printf("Picked device %d: %s\n", physicalDeviceProperties.properties.deviceID, physicalDeviceProperties.properties.deviceName);
 	puts("");
 
 	return RENDERER_SUCCESS;
@@ -434,6 +433,7 @@ static RendererResult createLogicalDevice() {
 	VkPhysicalDeviceFeatures2 deviceFeatures = {0};
 	deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	deviceFeatures.pNext = &deviceVulkan11Features;
+	deviceFeatures.features.samplerAnisotropy = VK_TRUE;
 
 	// Creating logical device
 	VkDeviceCreateInfo deviceCreateInfo = {0};

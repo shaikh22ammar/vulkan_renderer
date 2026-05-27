@@ -15,6 +15,7 @@ PKGS_LIB := $(filter -L%, $(PKGS_INFO)) $(filter -l%, $(PKGS_INFO))
 PKGS_RPATH := $(patsubst -L%, -Wl$(comma)-rpath$(comma)%, $(filter -L%, $(PKGS_LIB)))
 PKGS_INC += -Ithird_party/cglm/include
 PKGS_INC += -Ithird_party/glm/
+PKGS_INC += -Ithird_party/stb
 
 ### Compiler and linker commands
 CC := cc
@@ -55,6 +56,9 @@ C_SRCS   = $(shell find $(SRC_DIR) -name "*.c"   -not -name "_*")
 CXX_SRCS = $(shell find $(SRC_DIR) -name "*.cpp" -not -name "_*")
 $(info C sources:   $(C_SRCS))
 $(info C++ sources: $(CXX_SRCS))
+ASSET_DIR = assets
+COMMON_FLAGS += -DASSET_DIR=\"$(ASSET_DIR)\"
+
 
 OBJS_DIR	= $(BUILD_DIR)/objs
 C_OBJS		= $(patsubst $(SRC_DIR)/%, $(OBJS_DIR)/%, $(C_SRCS:.c=.o))
@@ -65,9 +69,8 @@ DEPS		= $(OBJS:.o=.d)
 SLANG_DIR	= $(SRC_DIR)/shaders
 SLANG_SHADERS	= $(wildcard $(SLANG_DIR)/*.slang)
 $(info Shaders: $(SLANG_SHADERS))
-SPV_DIR		:= assets/shaders
+SPV_DIR		:= $(ASSET_DIR)/shaders
 SPV_SHADERS	= $(patsubst $(SLANG_DIR)/%, $(SPV_DIR)/%, $(SLANG_SHADERS:.slang=.spv))
-
 COMMON_FLAGS += -DSHADER_DIR=\"$(SPV_DIR)\"
 
 

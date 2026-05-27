@@ -30,6 +30,8 @@ extern VkBuffer vertexBuffer;
 extern int numVertices;
 extern int numIndices;
 
+extern VkDescriptorSet descriptorSet;
+
 extern VkSemaphore *pAcquiredImageSemaphores;
 extern VkFence *pDrawingDoneFences;
 extern VkSemaphore *pRenderingDoneSemaphores;
@@ -197,7 +199,8 @@ static RendererResult recordCommandBuffer(uint32_t imageIndex) {
 	VkDeviceSize pZeros[1] = {0};
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, pZeros);
 	vkCmdBindIndexBuffer(commandBuffer, vertexBuffer, indexOffset, VK_INDEX_TYPE_UINT16);
-
+	
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 
 	struct pushConstants pc;
 	updatePushConstants(&pc);
