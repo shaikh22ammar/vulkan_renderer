@@ -1,5 +1,5 @@
 struct VSInput {
-	float2 inPosition;
+	float3 inPosition;
 	float2 inUv;
 };
 
@@ -17,7 +17,7 @@ struct PushConstants {
 VSOutput vertMain(VSInput input, uniform PushConstants push) {
 	VSOutput output;
 
-	output.pos = float4(input.inPosition, 0.0, 1.0);
+	output.pos = float4(input.inPosition, 1.0);
 	output.pos = mul(push.mvp, output.pos);
 
 	output.uv = input.inUv;

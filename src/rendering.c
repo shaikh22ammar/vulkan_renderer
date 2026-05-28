@@ -107,7 +107,7 @@ void updatePushConstants(struct pushConstants *pc) {
 	glm_rotate_z(model, glm_rad(90)*time, model);
 
 	// view the 2d object from above and behind
-	vec3 eye = {0.0f, -1.0f, -2.0f};
+	vec3 eye = {0.0f, -2.0f, -2.0f};
 	vec3 center = {0, 0, 0};
 	mat4 view;
 	glm_lookat_vk(eye, center, down, view);

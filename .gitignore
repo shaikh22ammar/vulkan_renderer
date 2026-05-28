@@ -14,6 +14,7 @@ compile_commands.json
 *.sh
 
 # Junk
+*.DSYM
 .DS_Store
 /.cache/
 

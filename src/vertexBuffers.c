@@ -18,9 +18,8 @@ extern VkCommandBuffer transferCommandBuffer;
 
 
 struct Vertex {
-	vec2 pos;
+	vec3 pos;
 	vec2 uv;
-	vec3 color;
 };
 
 static struct Vertex *vertices;
@@ -50,87 +49,51 @@ extern uint32_t findMemoryTypes(uint32_t supportedMemoryTypes, VkMemoryPropertyF
 extern void setBufferLabel(VkDevice device, VkBuffer buffer, const char* name);
 #endif
 
-[[maybe_unused]] static RendererResult createTriangleVertices() {
-	numVertices = 3;
-
-	vertices = calloc(numVertices, sizeof(struct Vertex));
-	MALLOC_CHECK(vertices);
-
-	vertices[0].pos[0] = 0.0f;
-	vertices[0].pos[1] = -0.5f;
-	vertices[0].color[0] = 1.0f;
-	vertices[0].color[1] = 0.0f;
-	vertices[0].color[2] = 0.0f;
-
-	vertices[1].pos[0] = 0.5f;
-	vertices[1].pos[1] = 0.5f;
-	vertices[1].color[0] = 0.0f;
-	vertices[1].color[1] = 1.0f;
-	vertices[1].color[2] = 0.0f;
-
-	vertices[2].pos[0] = -0.5f;
-	vertices[2].pos[1] = 0.5f;
-	vertices[2].color[0] = 0.0f;
-	vertices[2].color[1] = 0.0f;
-	vertices[2].color[2] = 1.0f;
-
-	numIndices = 3;
-	vertexIndices = malloc(numIndices * sizeof(uint16_t));
-	MALLOC_CHECK(vertexIndices);
-
-	vertexIndices[0] = 0;
-	vertexIndices[1] = 1;
-	vertexIndices[2] = 2;
-
-	return RENDERER_SUCCESS;
-}
-
-[[maybe_unused]] static RendererResult createSquareVertices() {
-	numVertices = 4;
+static RendererResult createSquareVertices() {
+	numVertices = 8;
 
 	vertices = calloc(numVertices, sizeof(struct Vertex));
 	MALLOC_CHECK(vertices);
 
 	vertices[0].pos[0] = -0.5f;
 	vertices[0].pos[1] = -0.5f;
-	vertices[0].color[0] = 1.0f;
-	vertices[0].color[1] = 0.0f;
-	vertices[0].color[2] = 0.0f;
 
 	vertices[1].pos[0] = 0.5f;
 	vertices[1].pos[1] = -0.5f;
-	vertices[1].color[0] = 0.0f;
-	vertices[1].color[1] = 1.0f;
-	vertices[1].color[2] = 0.0f;
 	vertices[1].uv[0] = 1;
 	vertices[1].uv[1] = 0;
 
 	vertices[2].pos[0] = 0.5f;
 	vertices[2].pos[1] = 0.5f;
-	vertices[2].color[0] = 0.0f;
-	vertices[2].color[1] = 0.0f;
-	vertices[2].color[2] = 1.0f;
 	vertices[2].uv[0] = 1;
 	vertices[2].uv[1] = 1;
 
 	vertices[3].pos[0] = -0.5f;
 	vertices[3].pos[1] = 0.5f;
-	vertices[3].color[0] = 1.0f;
-	vertices[3].color[1] = 1.0f;
-	vertices[3].color[2] = 1.0f;
 	vertices[3].uv[0] = 0;
 	vertices[3].uv[1] = 1;
 
-	numIndices = 6;
+	for(int i = 0; i < 4; i++) {
+		vertices[i+4].pos[0] = vertices[i].pos[0];
+		vertices[i+4].pos[1] = vertices[i].pos[1];
+		vertices[i+4].pos[2] = 0.5f;
+		
+		vertices[i+4].uv[0] = vertices[i].uv[0];
+		vertices[i+4].uv[1] = vertices[i].uv[1];
+	}
+
+	numIndices = 12;
 	vertexIndices = malloc(numIndices * sizeof(uint16_t));
 	MALLOC_CHECK(vertexIndices);
 
-	vertexIndices[0] = 0;
-	vertexIndices[1] = 1;
-	vertexIndices[2] = 2;
-	vertexIndices[3] = 2;
-	vertexIndices[4] = 3;
-	vertexIndices[5] = 0;
+	for (int j = 0; j <= 1; j++) {
+		vertexIndices[0+6*j] = 0+4*j;
+		vertexIndices[1+6*j] = 1+4*j;
+		vertexIndices[2+6*j] = 2+4*j;
+		vertexIndices[3+6*j] = 2+4*j;
+		vertexIndices[4+6*j] = 3+4*j;
+		vertexIndices[5+6*j] = 0+4*j;
+	}
 
 	return RENDERER_SUCCESS;
 }
@@ -147,7 +110,7 @@ static RendererResult updateVertexInputState() {
 
 	pVertexInputAttributeDescriptions[0].binding = 0;
 	pVertexInputAttributeDescriptions[0].location = 0;
-	pVertexInputAttributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+	pVertexInputAttributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
 	pVertexInputAttributeDescriptions[0].offset = offsetof(struct Vertex, pos);
 	pVertexInputAttributeDescriptions[1].binding = 0;
 	pVertexInputAttributeDescriptions[1].location = 1;
