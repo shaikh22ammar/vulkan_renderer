@@ -17,6 +17,7 @@ extern uint32_t findMemoryTypes(uint32_t supportedMemoryTypes, VkMemoryPropertyF
 extern VkQueue queue;
 extern VkCommandPool transferCommandPool;
 extern VkCommandBuffer transferCommandBuffer;
+extern VkExtent2D swapChainExtent;
 
 static VkBuffer stagingBuffer;
 static VkDeviceMemory stagingBufferMemory;
@@ -25,6 +26,11 @@ static VkImage textureImage;
 extern VkImageView textureImageView;
 extern VkSampler textureImageSampler;
 static VkDeviceMemory textureImageMemory;
+
+extern VkImage depthImage;
+extern VkImageView depthView;
+static VkDeviceMemory depthImageMemory;
+
 
 
 static RendererResult transitionImageLayoutInferStage(
@@ -192,6 +198,48 @@ static RendererResult createTextureImage() {
 	return RENDERER_SUCCESS;
 }
 
+static RendererResult createDepthBuffer() {
+	VkImageCreateInfo depthImageCreateInfo = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+		.imageType = VK_IMAGE_TYPE_2D,
+		.format = VK_FORMAT_D32_SFLOAT,
+		.extent = {.width = swapChainExtent.width, .height = swapChainExtent.height, .depth = 1},
+		.mipLevels = 1,
+		.arrayLayers = 1,
+		.samples = 1,
+		.tiling = VK_IMAGE_TILING_OPTIMAL,
+		.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+	};
+	VK_CHECK(vkCreateImage(device, &depthImageCreateInfo, nullptr, &depthImage));
+	VkMemoryRequirements depthMemReqs;
+	vkGetImageMemoryRequirements(device, depthImage, &depthMemReqs);
+	VkMemoryAllocateInfo memAllocInfo = {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.allocationSize = depthMemReqs.size,
+		.memoryTypeIndex = findMemoryTypes(depthMemReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+	};
+	VK_CHECK(vkAllocateMemory(device, &memAllocInfo, nullptr, &depthImageMemory));
+	vkBindImageMemory(device, depthImage, depthImageMemory, 0);
+
+	VkImageViewCreateInfo depthViewCreateInfo = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+		.image = depthImage,
+		.viewType = VK_IMAGE_VIEW_TYPE_2D,
+		.format = VK_FORMAT_D32_SFLOAT,
+		.subresourceRange = {
+			.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+			.baseMipLevel = 0,
+			.levelCount = 1,
+			.baseArrayLayer = 0,
+			.layerCount = 1
+		}
+	};
+	VK_CHECK(vkCreateImageView(device, &depthViewCreateInfo, nullptr, &depthView));
+	return RENDERER_SUCCESS;
+}
+
 static RendererResult createTextureImageView() {
 	VkImageViewCreateInfo imageViewCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -238,10 +286,13 @@ static RendererResult createTextureImageSampler() {
 
 extern struct functionStack cleanupFunctions;
 static void destroyImages() {
+	vkDestroyImage(device, depthImage, nullptr);
+	vkDestroyImageView(device, depthView, nullptr);
 	vkDestroyImageView(device, textureImageView, nullptr);
 	vkDestroyImage(device, textureImage, nullptr);
 	vkDestroySampler(device, textureImageSampler, nullptr);
 	vkDestroyBuffer(device, stagingBuffer, nullptr);
+	vkFreeMemory(device, depthImageMemory, nullptr);
 	vkFreeMemory(device, textureImageMemory, nullptr);
 	vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
@@ -258,6 +309,7 @@ RendererResult initTexture() {
 	RR_TRY(createTextureImage());
 	RR_TRY(createTextureImageView());
 	RR_TRY(createTextureImageSampler());
+	RR_TRY(createDepthBuffer());
 
 	functionStack_insert(&cleanupFunctions, destroyImages);
 #ifndef NDEBUG

@@ -112,6 +112,8 @@ VkSemaphore *pRenderingDoneSemaphores = nullptr;
 // image
 VkImageView textureImageView = VK_NULL_HANDLE; 
 VkSampler textureImageSampler = VK_NULL_HANDLE;
+VkImage depthImage = VK_NULL_HANDLE;
+VkImageView depthView = VK_NULL_HANDLE;
 
 // descriptors
 VkDescriptorSet descriptorSet = VK_NULL_HANDLE;

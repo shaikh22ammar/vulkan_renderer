@@ -20,6 +20,8 @@ extern VkSwapchainKHR swapChain;
 extern VkImage *swapChainImages;
 extern VkImageView *swapChainImageViews;
 extern VkExtent2D swapChainExtent;
+extern VkImage depthImage;
+extern VkImageView depthView;
 
 extern VkPipeline graphicsPipeline;
 extern VkPipelineLayout pipelineLayout;
@@ -36,52 +38,6 @@ extern VkSemaphore *pAcquiredImageSemaphores;
 extern VkFence *pDrawingDoneFences;
 extern VkSemaphore *pRenderingDoneSemaphores;
 
-
-
-static void transitionImageLayout(
-		uint32_t imageIndex,
-		VkImageLayout oldLayout,
-		VkImageLayout newLayout,
-		VkAccessFlags2 srcAccesMask,
-		VkAccessFlags2 dstAccesMask,
-		VkPipelineStageFlags2 srcPipelineStageFlags2,
-		VkPipelineStageFlags2 dstPipelineStageFlags2
-		) {
-	/* Images are laid out in specific formats 
-	 * that are most optimal for the purpose.
-	 * For example, Morton curves for rendering */
-
-	/* This function records an image transition in
-	 * the command buffer */
-	VkCommandBuffer commandBuffer = pCommandBuffers[currentFrameInFlight];
-	VkImageMemoryBarrier2 imageMemoryBarrier = {0};
-	imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-	imageMemoryBarrier.pNext = nullptr;
-	imageMemoryBarrier.srcStageMask = srcPipelineStageFlags2;
-	imageMemoryBarrier.srcAccessMask = srcAccesMask;
-	imageMemoryBarrier.dstStageMask = dstPipelineStageFlags2;
-	imageMemoryBarrier.dstAccessMask = dstAccesMask;
-	imageMemoryBarrier.oldLayout = oldLayout;
-	imageMemoryBarrier.newLayout = newLayout;
-	imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	imageMemoryBarrier.image = swapChainImages[imageIndex];
-	imageMemoryBarrier.subresourceRange = (VkImageSubresourceRange) {
-		.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-		.baseMipLevel = 0,
-		.levelCount = 1,
-		.baseArrayLayer = 0,
-		.layerCount = 1
-	};
-
-	VkDependencyInfo dependencyInfo = {0};
-	dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-	dependencyInfo.pNext = nullptr;
-	dependencyInfo.imageMemoryBarrierCount = 1;
-	dependencyInfo.pImageMemoryBarriers = &imageMemoryBarrier;
-
-	vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
-}
 
 void updatePushConstants(struct pushConstants *pc) {
 
@@ -119,13 +75,59 @@ void updatePushConstants(struct pushConstants *pc) {
 	glm_mat4_mul(persp, pc->mvp, pc->mvp);
 }
 
+
+static void transitionImageLayout(
+		VkImage image,
+		VkImageLayout oldLayout,
+		VkImageLayout newLayout,
+		VkAccessFlags2 srcAccesMask,
+		VkAccessFlags2 dstAccesMask,
+		VkPipelineStageFlags2 srcPipelineStageFlags2,
+		VkPipelineStageFlags2 dstPipelineStageFlags2,
+		VkImageAspectFlags aspectFlags
+		) {
+	/* Images are laid out in specific formats 
+	 * that are most optimal for the purpose.
+	 * For example, Morton curves for rendering */
+
+	/* This function records an image transition in
+	 * the command buffer */
+	VkCommandBuffer commandBuffer = pCommandBuffers[currentFrameInFlight];
+	VkImageMemoryBarrier2 imageMemoryBarrier = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+		.srcStageMask = srcPipelineStageFlags2,
+		.srcAccessMask = srcAccesMask,
+		.dstStageMask = dstPipelineStageFlags2,
+		.dstAccessMask = dstAccesMask,
+		.oldLayout = oldLayout,
+		.newLayout = newLayout,
+		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		.image = image,
+		.subresourceRange = (VkImageSubresourceRange) {
+			.aspectMask = aspectFlags,
+			.baseMipLevel = 0,
+			.levelCount = 1,
+			.baseArrayLayer = 0,
+			.layerCount = 1
+		}
+	};
+	VkDependencyInfo dependencyInfo = {
+		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		.imageMemoryBarrierCount = 1,
+		.pImageMemoryBarriers = &imageMemoryBarrier,
+	};
+
+	vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
+}
+
 static RendererResult recordCommandBuffer(uint32_t imageIndex) {
 	VkCommandBuffer commandBuffer = pCommandBuffers[currentFrameInFlight];
 	vkResetCommandBuffer(commandBuffer, 0);
-	VkCommandBufferBeginInfo commandBufferBeginInfo = {0};
-	commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	commandBufferBeginInfo.pNext = nullptr;
-	commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	VkCommandBufferBeginInfo commandBufferBeginInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+	};
 	VK_CHECK(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo));
 	/* Before recording, we need to transition the image into the
 	 * optimal layout for color attachment.
@@ -138,19 +140,23 @@ static RendererResult recordCommandBuffer(uint32_t imageIndex) {
 	 * I don't know why dst access is not null */
 
 	transitionImageLayout(
-			imageIndex,
+			swapChainImages[imageIndex],
 			VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			VK_ACCESS_NONE,
 			VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
 			VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-			VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
-
-	VkClearValue clearColor = {0};
-	clearColor.color.float32[0] = 0.0f;
-	clearColor.color.float32[1] = 0.0f;
-	clearColor.color.float32[2] = 0.0f;
-	clearColor.color.float32[3] = 1.0f;
+			VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+			VK_IMAGE_ASPECT_COLOR_BIT);
+	transitionImageLayout(
+			depthImage,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+			VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+			VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+			VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+			VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+			VK_IMAGE_ASPECT_DEPTH_BIT);
 
 	// Draw commands must be recorded within a render pass instance. 
 	// Each render pass instance defines a set of image resources, referred to as attachments, used during rendering
@@ -159,23 +165,35 @@ static RendererResult recordCommandBuffer(uint32_t imageIndex) {
 	 * we need to specify certain things like should it be clear before rendering
 	 * should it be stored after rendering
 	 * what is its layout etc */
-	VkRenderingAttachmentInfo renderingAttachmentInfo = {0};
-	renderingAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-	renderingAttachmentInfo.pNext = nullptr;
-	renderingAttachmentInfo.imageView = swapChainImageViews[imageIndex];
-	renderingAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	renderingAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	renderingAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	renderingAttachmentInfo.clearValue = clearColor;
-
-	VkRenderingInfo renderingInfo = {0};
-	renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-	renderingInfo.pNext = nullptr;
-	renderingInfo.renderArea.offset = (VkOffset2D) {0, 0};
-	renderingInfo.renderArea.extent = swapChainExtent; 
-	renderingInfo.layerCount = 1; 
-	renderingInfo.colorAttachmentCount = 1;
-	renderingInfo.pColorAttachments = &renderingAttachmentInfo;
+	VkRenderingAttachmentInfo renderingAttachmentInfo = {
+		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+		.imageView = swapChainImageViews[imageIndex],
+		.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+		.clearValue = {
+			.color.float32 = {0.0f, 0.0f, 0.0f, 1.0f} 
+		}
+	};
+	VkRenderingAttachmentInfo depthAttachmentInfo = {
+		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+		.imageView = depthView,
+		.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+		.clearValue = {
+			.depthStencil.depth = 1.0f
+		}
+	};
+	VkRenderingInfo renderingInfo = {
+		.sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+		.renderArea.offset = (VkOffset2D) {0, 0},
+		.renderArea.extent = swapChainExtent, 
+		.layerCount = 1,
+		.colorAttachmentCount = 1,
+		.pColorAttachments = &renderingAttachmentInfo,
+		.pDepthAttachment = &depthAttachmentInfo
+	};
 
 	vkCmdBeginRendering(commandBuffer, &renderingInfo);
 
@@ -211,13 +229,14 @@ static RendererResult recordCommandBuffer(uint32_t imageIndex) {
 	vkCmdEndRendering(commandBuffer);
 
 	transitionImageLayout(
-			imageIndex, 
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+			swapChainImages[imageIndex],
+			VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-			VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 			VK_ACCESS_NONE,
+			VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
 			VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-			VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT);
+			VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+			VK_IMAGE_ASPECT_COLOR_BIT);
 	/* When transitioning the image to the appropriate layout, 
 	 * there is no need to delay subsequent processing, or perform any visibility operations 
 	 * (as vkQueuePresentKHR performs automatic visibility operations). 
