@@ -26,6 +26,8 @@ extern VkImageView depthView;
 extern VkPipeline graphicsPipeline;
 extern VkPipelineLayout pipelineLayout;
 
+
+extern const VkIndexType indexType;
 extern VkDeviceSize indexOffset;
 extern VkDeviceSize vertexBufferSize;
 extern VkBuffer vertexBuffer;
@@ -59,11 +61,11 @@ void updatePushConstants(struct pushConstants *pc) {
 	mat4 model;
 	vec3 down = {0.0f, 1.0f, 0.0f};
 	glm_mat4_identity(model);
-	glm_rotate_x(model, glm_rad(-90), model);
-	glm_rotate_z(model, glm_rad(90)*time, model);
+	//glm_rotate_x(model, glm_rad(-90), model);
+	glm_rotate_y(model, glm_rad(90)*time, model);
 
 	// view the 2d object from above and behind
-	vec3 eye = {0.0f, -2.0f, -2.0f};
+	vec3 eye = {0.0f, -2.5f, -2.5f};
 	vec3 center = {0, 0, 0};
 	mat4 view;
 	glm_lookat_vk(eye, center, down, view);
@@ -216,7 +218,7 @@ static RendererResult recordCommandBuffer(uint32_t imageIndex) {
 
 	VkDeviceSize pZeros[1] = {0};
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, pZeros);
-	vkCmdBindIndexBuffer(commandBuffer, vertexBuffer, indexOffset, VK_INDEX_TYPE_UINT16);
+	vkCmdBindIndexBuffer(commandBuffer, vertexBuffer, indexOffset, indexType);
 	
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 

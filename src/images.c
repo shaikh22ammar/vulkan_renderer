@@ -83,7 +83,7 @@ static RendererResult transitionImageLayoutInferStage(
 
 static RendererResult createTextureImage() {
 	int texWidth, texHeight, texChannels;
-	stbi_uc *pixels = stbi_load(ASSET_DIR "/textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+	stbi_uc *pixels = stbi_load(ASSET_DIR "/textures/viking_room.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 	VkDeviceSize imageSize = texWidth * texHeight * 4;
 	if (!pixels) {
 		RR_SET_ERROR(RENDERER_ERR_IMAGE, 0, "textures/texture.jpg could not be loaded");

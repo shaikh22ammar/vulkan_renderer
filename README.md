@@ -22,3 +22,8 @@ Non-POSIX systems are not supprted.
 1. Use `make isMacOS = false` for devices that natively support Vulkan, otherwise `make` on MacOS, for a debug build. 
 2. Use `make [isMacOS = ...] isDebug = false` for optimised build without validation layers.
 3. Run using `./run.sh`
+
+# Examples 
+
+![Square](recordings/square.gif)
+![Viking room](recordings/viking_room.gif)

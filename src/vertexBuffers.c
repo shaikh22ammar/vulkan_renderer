@@ -4,6 +4,7 @@
 #include <vulkan/vulkan_core.h>
 #include "utils/alignment.h"
 #include "utils/functionQueue.h"
+#include "types.h"
 
 /* Vertices and index data are packed in a single buffer */
 
@@ -16,15 +17,9 @@ extern VkCommandBuffer transferCommandBuffer;
 
 
 
-
-struct Vertex {
-	vec3 pos;
-	vec2 uv;
-};
-
 static struct Vertex *vertices;
-static uint16_t *vertexIndices;
-const VkIndexType indexType = VK_INDEX_TYPE_UINT16;
+static uint32_t *vertexIndices;
+const VkIndexType indexType = VK_INDEX_TYPE_UINT32;
 
 
 
@@ -243,21 +238,17 @@ extern RendererResult rrSetDebugObjectName (
 		);
 #endif
 
+void loadModel(struct Vertex **vertices, uint32_t **indices, int *numVertices, int *numIndices);
 extern struct functionStack cleanupFunctions;
 RendererResult initVertices() {
-	constexpr int numFunctions = 3;
-
-	RendererResult (*functionsToCall[numFunctions])(void) = {
-		createSquareVertices,
-		updateVertexInputState,
-		createVertexBuffer
-	};
-	for (int i = 0; i < numFunctions; i++) {
-		RR_TRY(functionsToCall[i]());
-	}
+	//RR_TRY(createSquareVertices());
+	loadModel(&vertices, &vertexIndices, &numVertices, &numIndices);
+	RR_TRY(updateVertexInputState());
+	RR_TRY(createVertexBuffer());
 
 	functionStack_insert(&cleanupFunctions, destroyBufferAndMemories);
-	free(vertices);
+	//free(vertices);
+	//free(vertexIndices);
 	vertices = NULL;
 
 #ifndef NDEBUG

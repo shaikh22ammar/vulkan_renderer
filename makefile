@@ -14,8 +14,9 @@ PKGS_INC := $(filter -I%, $(PKGS_INFO))
 PKGS_LIB := $(filter -L%, $(PKGS_INFO)) $(filter -l%, $(PKGS_INFO))
 PKGS_RPATH := $(patsubst -L%, -Wl$(comma)-rpath$(comma)%, $(filter -L%, $(PKGS_LIB)))
 PKGS_INC += -Ithird_party/cglm/include
-PKGS_INC += -Ithird_party/glm/
+PKGS_INC += -Ithird_party/glm
 PKGS_INC += -Ithird_party/stb
+PKGS_INC += -Ithird_party/tinyobjloader
 
 ### Compiler and linker commands
 CC := cc

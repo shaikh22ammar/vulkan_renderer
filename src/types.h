@@ -7,5 +7,11 @@ struct pushConstants {
 	mat4 mvp;
 };
 
+struct Vertex {
+	vec3 pos;
+	vec2 uv;
+};
+
+
 #endif
 
