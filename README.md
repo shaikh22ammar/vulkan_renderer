@@ -27,3 +27,13 @@ Non-POSIX systems are not supprted.
 
 ![Square](recordings/square.gif)
 ![Viking room](recordings/viking_room.gif)
+
+# Attributions
+
+- /assets/models/viking_room.obj /assets/textures/viking_room.png
+    - Author: nigelgoh
+    - Licence: CC BY 4.0
+    - URL: https://skfb.ly/VAKF
+- /assets/textures/texture.png
+    - Licence: CC0
+    - URL: https://pixabay.com/photos/statue-sculpture-figure-1275469/
